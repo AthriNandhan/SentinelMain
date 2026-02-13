@@ -1,0 +1,44 @@
+stateDiagram-v2
+    state "User" as User
+    state "Frontend" as Frontend
+    state "Backend" as Backend
+
+    [*] --> User
+    
+    state User {
+        [*] --> SelectCodeFile
+        SelectCodeFile --> ChooseVulnType
+        ChooseVulnType --> ClickRemediate
+        ClickRemediate --> MonitorProgress
+        MonitorProgress --> ReviewPatch
+        ReviewPatch --> ApprovePatch
+    }
+
+    state Frontend {
+        CaptureRequest --> SendRemediationRequest
+        DisplayProgress --> FetchStatus
+        FetchStatus --> DisplayProgress
+        DisplayPatch --> SendApplyPatchRequest
+    }
+
+    state Backend {
+        ReceiveRequest --> StartWorkflow
+        StartWorkflow --> AgentLoop
+        AgentLoop --> RedAgent
+        RedAgent --> BlueAgent : Exploit Successful
+        RedAgent --> AgentLoop : Exploit Failed
+        BlueAgent --> GreenAgent
+        GreenAgent --> AgentLoop : Verification Failed
+        GreenAgent --> WorkflowComplete : Verification Passed
+        WorkflowComplete --> StoreState
+        ApplyPatch --> UpdateFile
+    }
+
+    ClickRemediate --> CaptureRequest
+    SendRemediationRequest --> ReceiveRequest
+    MonitorProgress --> FetchStatus
+    FetchStatus --> StoreState
+    WorkflowComplete --> DisplayPatch
+    ApprovePatch --> SendApplyPatchRequest
+    SendApplyPatchRequest --> ApplyPatch
+    UpdateFile --> [*]

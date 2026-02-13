@@ -1,0 +1,74 @@
+classDiagram
+    class RemediationState {
+        +str code_path
+        +str vulnerability_type
+        +bool exploit_success
+        +List~str~ exploit_payloads
+        +Optional~str~ patch_diff
+        +Optional~str~ patch_explanation
+        +str verification_status
+        +Optional~str~ verification_reasoning
+        +int iteration_count
+        +int max_iterations
+    }
+
+    class LLMService {
+        +str provider
+        +str model_name
+        +generate_text(prompt: str) str
+    }
+
+    class Settings {
+        +str GEMINI_API_KEY
+        +str GROQ_API_KEY
+        +str LLM_PROVIDER
+        +str MODEL_NAME
+        +validate()
+    }
+
+    class TestHarness {
+        +str db_name
+        +str flag
+        +setup_db()
+        +cleanup_db()
+        +run_attack(code_path: str, payload: str) dict
+        +verify_fix(code_content: str) dict
+    }
+
+    class SandboxService {
+        +str sandbox_type
+        +execute_command(command: str) Tuple
+        +apply_patch(file_path: str, patch_diff: str) bool
+        +revert_changes(file_path: str)
+        +run_tests(test_command: str) bool
+    }
+
+    class RedAgent {
+        <<Module>>
+        +red_agent(state: RemediationState) RemediationState
+    }
+
+    class BlueAgent {
+        <<Module>>
+        +blue_agent(state: RemediationState) RemediationState
+    }
+
+    class GreenAgent {
+        <<Module>>
+        +green_agent(state: RemediationState) RemediationState
+    }
+
+    RedAgent ..> RemediationState : uses
+    BlueAgent ..> RemediationState : uses
+    GreenAgent ..> RemediationState : uses
+
+    RedAgent --> LLMService : uses
+    BlueAgent --> LLMService : uses
+    GreenAgent --> LLMService : uses
+
+    RedAgent --> TestHarness : uses
+    GreenAgent --> TestHarness : uses
+    
+    LLMService --> Settings : uses
+    
+    note "Agents operate on RemediationState and leverage Services/Core components."

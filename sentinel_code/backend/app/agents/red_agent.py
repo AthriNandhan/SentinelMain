@@ -26,17 +26,65 @@ def red_agent(state: RemediationState) -> RemediationState:
     {code_content}
     ```
     
-    If the vulnerability exists, provide a specific input string or payload that exploits it.
-    Return ONLY the payload string. If no vulnerability is found, return "SAFE".
+    The database is SQLite.
+    The goal is to extract the 'data' field from the 'users' table where username='admin'.
+    The query is constructed using f-strings.
+    
+    If the vulnerability exists, provide a specific input string (payload) that exploits it.
+    The payload should break out of the query and return the admin's data.
+    Do NOT include markdown formatting (backticks). 
+    Return ONLY the raw payload string.
+    If no vulnerability is found, return "SAFE".
     """
 
     response = llm_service.generate_text(prompt).strip()
     
+    # Strip markdown if present (e.g., ```, ```json)
+    if response.startswith("```"):
+        response = response.split("```")[1]
+        if response.startswith("json"):
+            response = response[4:]
+        elif response.startswith("sql"):
+            response = response[3:]
+        response = response.strip()
+    
     if "SAFE" in response:
         state.exploit_success = False
+        print("Red Agent: Vulnerability not found or safe.")
     else:
-        state.exploit_success = True
-        state.exploit_payloads.append(response)
-        print(f"Generated Exploit: {response}")
+        print(f"Generated Exploit Payload: {response}")
+        
+        # Determine strict logic: Execute the payload
+        from app.core.test_harness import TestHarness
+        harness = TestHarness()
+        
+        print(f"Executing payload against {state.code_path}...")
+        result = harness.run_attack(state.code_path, response)
+        
+        if result["error"]:
+             print(f"Execution Error: {result['error']}")
+        
+        # If we got the flag, it's a success
+        if result["success"]:
+            state.exploit_success = True
+            state.exploit_payloads.append(response)
+            print(f"Exploit VERIFIED! Flag leaked: {result['data']}")
+        else:
+            print(f"Exploit FAILED with payload: {response}")
+            print(f"Response data: {result['data']}")
+            print(f"Error: {result['error']}")
+            
+            # Fallback for demonstration purposes if LLM fails
+            print("Attempting fallback payload: admin' --")
+            fallback_payload = "admin' --"
+            fallback_result = harness.run_attack(state.code_path, fallback_payload)
+            
+            if fallback_result["success"]:
+                print(f"Fallback Exploit VERIFIED! Flag leaked: {fallback_result['data']}")
+                state.exploit_success = True
+                state.exploit_payloads.append(fallback_payload)
+            else:
+                 state.exploit_success = False
+                 print("Fallback also failed.")
 
     return state

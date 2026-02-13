@@ -2,7 +2,11 @@ import sys
 import os
 
 # Add backend to path
-sys.path.append(os.path.abspath("sentinel_code/backend"))
+# Get the directory containing this script (e.g., .../sentinel_code/backend)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Add the backend directory to sys.path so app modules can be imported
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
 
 from app.models.state import RemediationState
 from app.graph.workflow import app as workflow_app
@@ -11,7 +15,9 @@ def test_workflow():
     print("Initializing state...")
     # Use absolute path to ensure agents can find it
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    vulnerable_file = os.path.join(current_dir, "vulnerable_code.py")
+    # vulnerable_code.py is in the project root, which is two levels up from sentinel_code/backend
+    project_root = os.path.dirname(os.path.dirname(current_dir))
+    vulnerable_file = os.path.join(project_root, "vulnerable_code.py")
     
     initial_state = RemediationState(
         code_path=vulnerable_file,

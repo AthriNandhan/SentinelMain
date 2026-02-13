@@ -28,21 +28,29 @@ def green_agent(state: RemediationState) -> RemediationState:
     
     response = llm_service.generate_text(prompt).strip()
     
-    # Parse the response
-    reasoning = "No reasoning provided."
-    status = "FAIL"
+    response = llm_service.generate_text(prompt).strip()
     
-    for line in response.split('\n'):
-        if line.startswith("Reasoning:"):
-            reasoning = line.replace("Reasoning:", "").strip()
-        elif line.startswith("Status:"):
-            status = line.replace("Status:", "").strip().upper()
-            
-    # Fallback if parsing fails but keywords exist
-    if "Status:" not in response:
-        if "PASS" in response: status = "PASS"
-        if "FAIL" in response: status = "FAIL"
-        reasoning = response # Store full response as reasoning if format is broken
+    # ----------------------------------------------------
+    # NEW: EXECUTION-BASED VERIFICATION
+    # ----------------------------------------------------
+    from app.core.test_harness import TestHarness
+    harness = TestHarness()
+    
+    print("\nExecuting Test Harness on patched code...")
+    results = harness.verify_fix(state.patch_diff)
+    
+    verified = results["regression_passed"] and results["security_passed"]
+    
+    # Update reasoning with actual execution results
+    execution_reasoning = "\n".join(results["details"])
+    print(f"Test Results:\n{execution_reasoning}")
+    
+    if verified:
+        status = "PASS"
+        reasoning = f"Automated Tests PASSED.\n{execution_reasoning}\n\nLLM Review: {response}"
+    else:
+        status = "FAIL"
+        reasoning = f"Automated Tests FAILED.\n{execution_reasoning}\n\nLLM Review: {response}"
 
     state.verification_status = status
     state.verification_reasoning = reasoning

@@ -1,0 +1,68 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant Frontend as Frontend (Client)
+    participant API as Backend (FastAPI)
+    participant Orchestrator as Orchestrator (LangGraph)
+    participant Red as Red Agent
+    participant Blue as Blue Agent
+    participant Green as Green Agent
+    participant Harness as Test Harness
+    participant LLM as LLM Service
+
+    User->>Frontend: Initiates Remediation
+    Frontend->>API: POST /remediate {code_path, vuln_type}
+    activate API
+    API->>Orchestrator: run_workflow(id, state) (Async)
+    API-->>Frontend: 200 OK {workflow_id}
+    deactivate API
+
+    activate Orchestrator
+    loop Remediation Cycle
+        Orchestrator->>Red: red_agent(state)
+        activate Red
+        Red->>LLM: generate_payload(code)
+        LLM-->>Red: payload
+        Red->>Harness: run_attack(code, payload)
+        activate Harness
+        Harness-->>Red: {success, data}
+        deactivate Harness
+        Red-->>Orchestrator: state (exploit_success)
+        deactivate Red
+
+        opt Exploit Successful
+            Orchestrator->>Blue: blue_agent(state)
+            activate Blue
+            Blue->>LLM: generate_patch(code, payload)
+            LLM-->>Blue: patch_code
+            Blue-->>Orchestrator: state (patch_diff)
+            deactivate Blue
+
+            Orchestrator->>Green: green_agent(state)
+            activate Green
+            Green->>Harness: verify_fix(patch_code)
+            activate Harness
+            Harness-->>Green: {regression_passed, security_passed}
+            deactivate Harness
+            Green->>LLM: review_patch(patch_code)
+            LLM-->>Green: reasoning
+            Green-->>Orchestrator: state (verification_status)
+            deactivate Green
+        end
+    end
+    deactivate Orchestrator
+
+    User->>Frontend: Checks Status
+    Frontend->>API: GET /status/{workflow_id}
+    activate API
+    API-->>Frontend: {state, logs}
+    deactivate API
+
+    opt Patch Verification Success
+        User->>Frontend: Approves Patch
+        Frontend->>API: POST /apply_patch/{workflow_id}
+        activate API
+        API->>API: Apply patch to file
+        API-->>Frontend: 200 OK
+        deactivate API
+    end

@@ -1,0 +1,42 @@
+classDiagram
+    class SimulationManager {
+        -bool simulation_running_flag
+        -string current_algorithm_choice
+        +start_simulation()
+        +stop_simulation()
+        +simulation_loop()
+    }
+    class GridEnvironment {
+        -int grid_size
+        -dict agent_pos
+        -list packages
+        -dict traffic_map
+        +reset()
+        +step(int action_idx)
+        +add_package(dict info)
+        +get_state() dict
+    }
+    class AbstractLearner {
+        <<Abstract>>
+        +refine_policy()
+    }
+    class SelfSupervisedLearner {
+        +refine_traffic_predictor()
+    }
+    class MetaLearner {
+        +choose_best_target(packages, agent_pos, depot_pos) dict
+    }
+    class EvolutionaryOptimizer {
+        -int generation
+        +evolve_next_generation()
+    }
+
+    SimulationManager "1" *-- "1" GridEnvironment : uses
+    SimulationManager "1" o-- "1..*" SelfSupervisedLearner : uses
+    SimulationManager "1" o-- "1..*" MetaLearner : uses
+    SimulationManager "1" o-- "1..*" EvolutionaryOptimizer : uses
+    AbstractLearner <|-- SelfSupervisedLearner
+    AbstractLearner <|-- MetaLearner
+    AbstractLearner <|-- EvolutionaryOptimizer
+    
+    note "SimulationManager orchestrates the simulation loop using GridEnvironment and Learners."

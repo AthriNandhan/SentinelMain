@@ -1,0 +1,19 @@
+usecaseDiagram
+    actor User as "Security Engineer"
+    
+    package "Sentinel Auto-Remediation System" {
+        usecase "Initiate Remediation" as UC1
+        usecase "Monitor Workflow Progress" as UC2
+        usecase "View Agent Logs" as UC3
+        usecase "Review Generated Patch" as UC4
+        usecase "Apply Verified Patch" as UC5
+    }
+
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+
+    UC2 .> UC3 : includes
+    UC5 .> UC4 : extends
