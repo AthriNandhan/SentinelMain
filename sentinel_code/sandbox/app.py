@@ -40,22 +40,29 @@ def analyze():
         import json
         payload = json.dumps(data)
         
-        # delegate to the vulnerable code module's generic entrypoint
-        # each vulnerability file should provide a `handle` function
+        # find the function to call automatically
+        import inspect
+        
+        # Get all functions defined in the vulnerable_code module
+        functions = inspect.getmembers(vulnerable_code, inspect.isfunction)
+        
         result = None
+        handler = None
+        
+        # Try finding a generic handle first
         if hasattr(vulnerable_code, 'handle'):
-            result = vulnerable_code.handle(payload)
-        elif hasattr(vulnerable_code, 'get_secure_user_data'):
-            # backwards compatibility with original SQL file
-            result = vulnerable_code.get_secure_user_data(payload)
-        elif hasattr(vulnerable_code, 'render_user_content'):
-            result = vulnerable_code.render_user_content(payload)
-        elif hasattr(vulnerable_code, 'safely_read_file'):
-            result = vulnerable_code.safely_read_file(payload)
-        elif hasattr(vulnerable_code, 'process_user_input'):
-            result = vulnerable_code.process_user_input(payload)
+            handler = vulnerable_code.handle
+        elif functions:
+            # Just grab the first defined function that isn't a builtin/import
+            for name, func in functions:
+                if func.__module__ == 'vulnerable_code':
+                    handler = func
+                    break
+        
+        if handler:
+            result = handler(payload)
         else:
-            raise AttributeError('vulnerable_code module has no handler function')
+            raise AttributeError('vulnerable_code module has no handler function defined')
         
         if result:
             return jsonify({"status": "success", "data": result})
