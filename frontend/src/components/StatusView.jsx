@@ -69,74 +69,126 @@ const StatusView = ({ workflowId }) => {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gray-800 p-4 rounded border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-bold uppercase">Iteration</h3>
-                    <p className="text-2xl font-mono">{state.iteration_count} / {state.max_iterations}</p>
+            {/* Top Dashboard Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                    <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Iteration</h3>
+                    <div className="flex items-baseline gap-2">
+                        <p className="text-3xl font-mono text-white">{state.iteration_count}</p>
+                        <p className="text-slate-500 font-mono text-lg">/ {state.max_iterations}</p>
+                    </div>
                 </div>
-                <div className="bg-gray-800 p-4 rounded border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-bold uppercase">Network Status</h3>
-                    <p className={`text-2xl font-mono ${statusColor}`}>
+                
+                <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
+                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${
+                        remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'bg-emerald-500/10' :
+                        remediationStatus === 'VULNERABLE' ? 'bg-red-500/10' : 'bg-amber-500/10'
+                    }`}></div>
+                    <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Network Status</h3>
+                    <p className={`text-2xl font-mono font-bold tracking-tight ${
+                        remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'text-emerald-400' :
+                        remediationStatus === 'VULNERABLE' ? 'text-red-400' : 'text-amber-400'
+                    }`}>
                         {remediationStatus}
                     </p>
                 </div>
-                <div className="bg-gray-800 p-4 rounded border border-gray-700">
-                    <h3 className="text-gray-400 text-sm font-bold uppercase">Verification</h3>
-                    <p className={`text-2xl font-mono ${getStatusColor(state.verification_status)}`}>
+                
+                <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
+                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${
+                        state.verification_status === 'PASS' ? 'bg-emerald-500/10' :
+                        state.verification_status === 'FAIL' ? 'bg-red-500/10' : 'bg-indigo-500/10'
+                    }`}></div>
+                    <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Verification</h3>
+                    <p className={`text-2xl font-mono font-bold tracking-tight ${
+                        state.verification_status === 'PASS' ? 'text-emerald-400' :
+                        state.verification_status === 'FAIL' ? 'text-red-400' : 'text-indigo-400'
+                    }`}>
                         {state.verification_status}
                     </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-[300px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[300px]">
                 {/* Left Column: Verification Analysis */}
-                <div className="bg-gray-800 p-4 rounded border border-gray-700 flex flex-col">
-                    <h3 className="text-yellow-400 mb-2 font-bold flex items-center gap-2">
-                        <ShieldCheck size={16} /> Verification Analysis
-                    </h3>
-                    <div className="bg-gray-900 p-3 rounded text-gray-300 text-sm font-mono whitespace-pre-wrap border-l-4 border-yellow-500 flex-grow overflow-y-auto max-h-[400px]">
-                        {state.verification_reasoning || "Waiting for verification analysis..."}
+                <div className="bg-[#131A2A]/80 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-xl flex flex-col">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/5">
+                        <div className="p-1.5 bg-amber-500/10 rounded-md text-amber-400">
+                            <ShieldCheck size={18} />
+                        </div>
+                        <h3 className="text-slate-200 font-semibold tracking-wide">Verification Analysis</h3>
+                    </div>
+                    <div className="bg-[#0B0F19] p-4 rounded-xl text-slate-300 text-sm font-mono whitespace-pre-wrap flex-grow overflow-y-auto max-h-[400px] border border-white/5 shadow-inner leading-relaxed">
+                        {state.verification_reasoning || <span className="text-slate-500 italic">Waiting for verification analysis...</span>}
                     </div>
                 </div>
 
                 {/* Right Column: Patch Proposal */}
-                <div className="bg-gray-800 p-4 rounded border border-gray-700 flex flex-col">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-blue-400 font-bold flex items-center gap-2">
-                            <Activity size={16} /> Latest Patch
-                        </h3>
+                <div className="bg-[#131A2A]/80 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-xl flex flex-col">
+                    <div className="flex justify-between items-center mb-4 pb-3 border-b border-white/5">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-indigo-500/10 rounded-md text-indigo-400">
+                                <Activity size={18} />
+                            </div>
+                            <h3 className="text-slate-200 font-semibold tracking-wide">Proposed Patch</h3>
+                        </div>
                         {state.patch_diff && state.verification_status === 'PASS' && (
                             <button
                                 onClick={handleApply}
                                 disabled={applying || applyMsg.includes('Successfully')}
-                                className="bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm disabled:opacity-50"
+                                className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 font-medium py-1.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             >
-                                {applying ? 'Deploying...' : (applyMsg || 'Apply Patch to File')}
+                                {applying ? 'Deploying...' : (applyMsg || 'Apply Patch')}
                             </button>
                         )}
                     </div>
-                    <pre className="bg-black p-4 rounded text-green-300 font-mono text-xs overflow-auto flex-grow max-h-[400px]">
-                        {state.patch_diff || (state.verification_status === 'PASS' ? "No patch required." : "Waiting for patch generation...")}
-                    </pre>
+                    
+                    <div className="bg-[#0B0F19] rounded-xl border border-white/5 overflow-hidden flex-grow flex flex-col shadow-inner">
+                        {/* Fake mac window header */}
+                        <div className="px-4 py-2 bg-white/[0.02] border-b border-white/5 flex gap-2 items-center">
+                            <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-slate-700"></div>
+                            <span className="ml-2 text-xs text-slate-500 font-mono">diff --git</span>
+                        </div>
+                        <pre className="p-4 text-emerald-300/90 font-mono text-[13px] overflow-auto flex-grow max-h-[360px] leading-relaxed">
+                            {state.patch_diff || (state.verification_status === 'PASS' ? <span className="text-slate-500">No patch required.</span> : <span className="text-slate-500 italic">Waiting for patch generation...</span>)}
+                        </pre>
+                    </div>
                 </div>
             </div>
 
             {/* Bottom: Live Logs */}
-            <div className="bg-gray-900 p-4 rounded border border-gray-700 font-mono text-sm h-64 overflow-y-auto">
-                <h3 className="text-green-400 mb-2 flex items-center gap-2"><Terminal size={16} /> Live Operations Log</h3>
-                <div className="space-y-1">
+            <div className="bg-[#131A2A]/80 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-xl flex flex-col h-72">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/5">
+                    <Terminal size={18} className="text-slate-400" /> 
+                    <h3 className="text-slate-200 font-semibold tracking-wide">Live Operations Log</h3>
+                </div>
+                <div className="overflow-y-auto pr-2 space-y-3 flex-grow font-mono text-[13px]">
                     {logs && logs.events.map((log, idx) => (
-                        <div key={idx} className="border-b border-gray-800 pb-1 mb-1">
-                            <span className="text-gray-500">[{new Date(log.timestamp).toLocaleTimeString()}]</span>{' '}
-                            <span className="text-blue-400 font-bold">{log.agent}</span>:{' '}
-                            <span className="text-gray-300">{log.action}</span>
+                        <div key={idx} className="bg-[#0B0F19] p-3 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-3 mb-1.5">
+                                <span className="text-slate-500 text-xs">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
+                                <span className={`font-bold px-2 py-0.5 rounded text-xs ${
+                                    log.agent === 'Orchestrator' ? 'bg-indigo-500/20 text-indigo-300' :
+                                    log.agent === 'Red Agent' ? 'bg-red-500/20 text-red-300' :
+                                    log.agent === 'Blue Agent' ? 'bg-cyan-500/20 text-cyan-300' :
+                                    'bg-emerald-500/20 text-emerald-300'
+                                }`}>{log.agent}</span>
+                                <span className="text-slate-300">{log.action}</span>
+                            </div>
                             {log.details && (
-                                <pre className="text-xs text-gray-500 mt-1 pl-4 overflow-x-auto">
-                                    {JSON.stringify(log.details, null, 2)}
-                                </pre>
+                                <div className="mt-2 pl-3 border-l-2 border-slate-800">
+                                    <pre className="text-slate-400 text-xs overflow-x-auto whitespace-pre-wrap">
+                                        {JSON.stringify(log.details, null, 2)}
+                                    </pre>
+                                </div>
                             )}
                         </div>
                     ))}
+                    {!logs?.events?.length && (
+                        <div className="text-slate-500 italic text-center py-8">Awaiting operational telemetry...</div>
+                    )}
                 </div>
             </div>
         </div>

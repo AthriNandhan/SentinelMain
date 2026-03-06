@@ -50,48 +50,74 @@ const RemediationForm = ({ onStart }) => {
     };
 
     return (
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
-            <h2 className="text-xl font-bold mb-4 text-green-400 flex items-center gap-2">
-                <Play size={20} /> Start New Mission
+        <div className="bg-[#131A2A]/80 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/5 relative overflow-hidden group">
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity duration-500 pointer-events-none"></div>
+            
+            <h2 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
+                <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                    <Play size={18} className="fill-current" />
+                </div>
+                Start New Mission
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-400">Target File Path</label>
+            
+            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-400">Target File Path</label>
                     <input
                         type="text"
                         value={codePath}
                         onChange={(e) => setCodePath(e.target.value)}
-                        className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-green-500 focus:border-green-500"
+                        className="block w-full bg-[#0B0F19] border border-white/10 rounded-xl shadow-inner py-3 px-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
                         placeholder="C:/Projects/vulnerable.py"
                         required
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-400">Vulnerability Type</label>
-                    <select
-                        value={vulnType}
-                        onChange={(e) => setVulnType(e.target.value)}
-                        className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-green-500 focus:border-green-500"
-                        required
-                        disabled={loadingVulns}
-                    >
-                        <option value="" disabled>
-                            {loadingVulns ? 'Loading...' : 'Select Vulnerability Type'}
-                        </option>
-                        {vulnerabilities.map((vuln) => (
-                            <option key={vuln.code} value={vuln.code}>
-                                {vuln.name}
+                
+                <div className="space-y-1.5">
+                    <label className="block text-sm font-medium text-slate-400">Vulnerability Type</label>
+                    <div className="relative">
+                        <select
+                            value={vulnType}
+                            onChange={(e) => setVulnType(e.target.value)}
+                            className="block w-full appearance-none bg-[#0B0F19] border border-white/10 rounded-xl shadow-inner py-3 px-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            required
+                            disabled={loadingVulns}
+                        >
+                            <option value="" disabled className="text-slate-500">
+                                {loadingVulns ? 'Initializing scanners...' : 'Select Target Vulnerability'}
                             </option>
-                        ))}
-                    </select>
+                            {vulnerabilities.map((vuln) => (
+                                <option key={vuln.code} value={vuln.code} className="bg-[#131A2A]">
+                                    {vuln.name}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
                 </div>
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                
+                {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-start gap-2">
+                        <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p>{error}</p>
+                    </div>
+                )}
+                
                 <button
                     type="submit"
                     disabled={loading || loadingVulns}
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                    className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#131A2A] focus:ring-indigo-500 transition-all duration-200 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none mt-4"
                 >
-                    {loading ? <Loader2 className="animate-spin" /> : 'Launch Sentinel'}
+                    {loading ? (
+                        <>
+                            <Loader2 className="animate-spin w-5 h-5" />
+                            <span>Deploying Sentinel...</span>
+                        </>
+                    ) : (
+                        <span>Launch Sequence</span>
+                    )}
                 </button>
             </form>
         </div>
