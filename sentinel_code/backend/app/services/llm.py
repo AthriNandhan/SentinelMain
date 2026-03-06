@@ -27,18 +27,15 @@ class LLMService:
                 
             elif self.provider == "groq":
                 chat_completion = self.client.chat.completions.create(
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": prompt,
-                        }
-                    ],
+                    messages=[{"role": "user", "content": prompt}],
                     model=self.model_name,
+                    max_tokens=500,
+                    timeout=10.0  # 10 second timeout
                 )
                 return chat_completion.choices[0].message.content
-
+                
         except Exception as e:
-            print(f"Error generating text with {self.provider}: {e}")
-            raise e
+            print(f"LLM service error: {e}")
+            return f"LLM_ERROR: {str(e)}"
 
 llm_service = LLMService()

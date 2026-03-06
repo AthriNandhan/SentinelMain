@@ -31,6 +31,11 @@ class TestHarness:
         elif code_content:
             with open(self.target_code_path, "w", encoding="utf-8") as f:
                 f.write(code_content)
+            # Ensure file is fully flushed to disk
+            time.sleep(0.5)
+        
+        # Wait a bit longer for port to be released from previous server
+        time.sleep(0.5)
         
         env = os.environ.copy()
         env['FLASK_ENV'] = 'production'
@@ -54,6 +59,17 @@ class TestHarness:
         
         while retry_count < max_retries and not server_ready:
             time.sleep(1)
+            
+            # Check if process has died
+            if self.server_process.poll() is not None:
+                try:
+                    stdout_output = self.server_process.stdout.read() if self.server_process.stdout else "(no output)"
+                except:
+                    stdout_output = "(could not read output)"
+                print(f"ERROR: Flask process exited unexpectedly!")
+                print(f"Server output:\n{stdout_output}")
+                raise RuntimeError(f"Flask server failed to start. Output: {stdout_output}")
+            
             try:
                 response = requests.post(
                     self.server_url, 
@@ -62,16 +78,9 @@ class TestHarness:
                 )
                 server_ready = True
                 print("Flask server is up and responding!")
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
                 retry_count += 1
                 print(f"Waiting for server... ({retry_count}/{max_retries})")
-                
-                # Check if process has died
-                if self.server_process.poll() is not None:
-                    stdout_output = self.server_process.stdout.read() if self.server_process.stdout else ""
-                    print(f"ERROR: Flask process exited unexpectedly!")
-                    print(f"Server output:\n{stdout_output}")
-                    raise RuntimeError(f"Flask server failed to start. Output: {stdout_output}")
         
         if not server_ready:
             # Try to kill the process and read output
@@ -89,13 +98,29 @@ class TestHarness:
         if self.server_process:
             self.server_process.terminate()
             try:
-                self.server_process.wait(timeout=2)
+                self.server_process.wait(timeout=3)
             except subprocess.TimeoutExpired:
                 self.server_process.kill()
+                try:
+                    self.server_process.wait(timeout=2)
+                except:
+                    pass
             self.server_process = None
+            # Wait for port to be released
+            time.sleep(1.5)
             
         if os.path.exists(self.backup_path):
-            shutil.move(self.backup_path, self.target_code_path)
+            try:
+                shutil.move(self.backup_path, self.target_code_path)
+            except Exception as e:
+                print(f"Warning: Could not restore backup: {e}")
+                # If move fails, try to remove and copy instead
+                try:
+                    os.remove(self.target_code_path)
+                    shutil.copy(self.backup_path, self.target_code_path)
+                    os.remove(self.backup_path)
+                except:
+                    pass
 
     def run_attack(self, payload: str, code_path: str = None) -> dict:
         """
