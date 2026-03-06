@@ -10,7 +10,7 @@ def process_payment(request_payload):
         amount = data.get("amount", 0)
         
         # VULNERABLE: Hardcoded Stripe API key
-        STRIPE_API_KEY = "sk_live_1234567890abcdef12345678"
+        #STRIPE_API_KEY = "sk_live_1234567890abcdef12345678"
         
         if amount <= 0:
              return {"status": "error", "message": "Invalid amount"}
