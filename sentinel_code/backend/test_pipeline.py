@@ -2,7 +2,21 @@ from app.graph.workflow import app as workflow_app
 from app.models.state import RemediationState
 from app.core.vulnerability_config import get_vulnerability_config
 
-VULNERABILITY_TYPES = ["SQL", "XSS", "PATH_TRAVERSAL", "BUFFER_OVERFLOW"]
+# initial list only included the four demo vulnerabilities; add all configured types
+VULNERABILITY_TYPES = [
+    "SQL",
+    "XSS",
+    "PATH_TRAVERSAL",
+    "BUFFER_OVERFLOW",
+    "INFO_EXPOSURE",
+    "XXE",
+    "BOLA",
+    "INSECURE_RANDOMNESS",
+    "RACE_CONDITION",
+    "HARDCODED_SECRETS",
+    "DESERIALIZATION",
+    "SSRF",
+]
 
 def test_single_pipeline(vuln_type):
     """Test the remediation pipeline for a single vulnerability type."""
@@ -57,7 +71,16 @@ def test_all_pipelines():
             "SQL": "vulnerable_sql.py",
             "XSS": "vulnerable_xss.py",
             "PATH_TRAVERSAL": "vulnerable_path_traversal.py",
-            "BUFFER_OVERFLOW": "vulnerable_buffer_overflow.py"
+            "BUFFER_OVERFLOW": "vulnerable_buffer_overflow.py",
+            # generic fallback for the rest; they all honour same sandbox file
+            "INFO_EXPOSURE": "vulnerable_code.py",
+            "XXE": "vulnerable_code.py",
+            "BOLA": "vulnerable_code.py",
+            "INSECURE_RANDOMNESS": "vulnerable_code.py",
+            "RACE_CONDITION": "vulnerable_code.py",
+            "HARDCODED_SECRETS": "vulnerable_code.py",
+            "DESERIALIZATION": "vulnerable_code.py",
+            "SSRF": "vulnerable_code.py",
         }
         path = "../sandbox/" + file_map.get(vuln_type, "vulnerable_code.py")
         print(f"\n--- using file: {path}")

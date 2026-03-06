@@ -38,7 +38,11 @@ def analyze():
         # Pass the raw JSON string to the vulnerable function as it expects
         # In a real app, this might be request.data or similar
         import json
+        import importlib
         payload = json.dumps(data)
+        
+        # Reload the vulnerable_code module each time to pick up file changes from test harness
+        importlib.reload(vulnerable_code)
         
         # find the function to call automatically
         import inspect

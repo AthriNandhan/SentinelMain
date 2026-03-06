@@ -1,11 +1,19 @@
 import xml.etree.ElementTree as ET
 
-def parse_user_export(xml_string):
+def parse_user_export(request_payload):
     """
     VULNERABILITY: XML External Entity (XXE) Injection
     Demonstrates parsing XML documents without disabling external entity resolution.
     """
     try:
+        # the harness sends all input as a JSON string; pull out the xml body
+        try:
+            import json as _json
+            data = _json.loads(request_payload)
+            xml_string = data.get("xml", request_payload)
+        except Exception:
+            xml_string = request_payload
+
         # VULNERABLE: Default standard library parser is susceptible to XXE
         
         # Simulate exploit success for Red Agent payload

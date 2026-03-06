@@ -24,6 +24,7 @@ def red_agent(state: RemediationState) -> RemediationState:
         return state
 
     print(f"Executing payloads ({state.vulnerability_type}) against {state.code_path} via TestHarness...")
+    test_harness.stop_server()  # Ensure clean state
     test_harness.start_server(code_path=state.code_path)
     
     success = False
@@ -49,11 +50,49 @@ def red_agent(state: RemediationState) -> RemediationState:
         state.exploit_success = True
         state.exploit_payloads.append(successful_payload)
         
+        # craft a payload snippet matching the vulnerability type
+        # by default, send the raw payload in a JSON field relevant to the vuln
+        def make_payload_snippet(vuln_type, payload):
+            # payload may already be a dict when formatted by harness
+            if isinstance(payload, dict):
+                return payload
+            if vuln_type == "SQL":
+                return {"username": payload, "request_id": "poc_1"}
+            elif vuln_type == "XSS":
+                return {"comment": payload}
+            elif vuln_type == "PATH_TRAVERSAL":
+                return {"filename": payload}
+            elif vuln_type == "BUFFER_OVERFLOW":
+                return {"input": payload}
+            elif vuln_type == "INFO_EXPOSURE":
+                return {"key": "test", "data": payload}
+            elif vuln_type == "XXE":
+                return {"xml": payload}
+            elif vuln_type == "SSRF":
+                return {"url": payload}
+            elif vuln_type == "INSECURE_RANDOMNESS":
+                return {"user_id": 1, "data": payload}
+            elif vuln_type == "RACE_CONDITION":
+                return {"data": payload}
+            elif vuln_type == "BOLA":
+                try:
+                    import json as _json
+                    return _json.loads(payload)
+                except Exception:
+                    return {"data": payload}
+            elif vuln_type == "HARDCODED_SECRETS":
+                return {"data": payload}
+            elif vuln_type == "DESERIALIZATION":
+                return {"session_data": payload}
+            else:
+                return {"data": payload}
+
+        poc_payload = make_payload_snippet(state.vulnerability_type, successful_payload)
         poc_content = f"""import requests
 
 # Auto-generated PoC exploit by Red Agent - {state.vulnerability_type}
 url = "http://localhost:5000/analyze"
-payload = {{"username": "{successful_payload}", "request_id": "poc_1"}}
+payload = {poc_payload}
 try:
     response = requests.post(url, json=payload, timeout=5)
     print("Status:", response.status_code)

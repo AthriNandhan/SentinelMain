@@ -1,0 +1,41 @@
+{
+    "workflow_id": "134ed22e-5cb1-41da-96d0-ea2edf3e9fde",
+    "events": [
+        {
+            "timestamp": "2026-03-06T22:08:27.900857",
+            "agent": "Orchestrator",
+            "action": "Workflow Started",
+            "details": {
+                "code_path": "C:\\Projects\\Sentinel\\vulnerabilities\\1_sql_injection.py",
+                "vulnerability_type": "SQL",
+                "exploit_success": false,
+                "exploit_payloads": [],
+                "patch_diff": null,
+                "patch_explanation": null,
+                "verification_status": "PENDING",
+                "verification_reasoning": null,
+                "iteration_count": 0,
+                "max_iterations": 3
+            }
+        },
+        {
+            "timestamp": "2026-03-06T22:08:56.542052",
+            "agent": "Orchestrator",
+            "action": "Workflow Completed",
+            "details": {
+                "code_path": "C:\\Projects\\Sentinel\\vulnerabilities\\1_sql_injection.py",
+                "vulnerability_type": "SQL",
+                "exploit_success": true,
+                "exploit_payloads": [
+                    "admin' --"
+                ],
+                "patch_diff": "import sqlite3\nimport json\n\nclass QueryBuilder:\n    def __init__(self, table):\n        self.table = table\n        self.conditions = []\n        self.params = []\n\n    def where(self, field, value):\n        self.conditions.append(field + \" = ?\")\n        self.params.append(value)\n        return self\n\n    def build(self):\n        where_clause = \" AND \".join(self.conditions)\n        query = \"SELECT * FROM \" + self.table + \" WHERE \" + where_clause\n        return query, self.params\n\ndef get_secure_user_data(request_payload):\n    \"\"\"Use parameterized queries to prevent SQL injection.\"\"\"\n    try:\n        data = json.loads(request_payload)\n        username = data.get(\"username\")\n        request_id = data.get(\"request_id\")\n        \n        target_table = \"users\"\n        if data.get(\"is_legacy\"):\n            target_table = \"legacy_users_v1\"\n\n        qb = QueryBuilder(target_table)\n        qb.where(\"username\", username)\n        qb.where(\"active\", 1)\n        \n        query, params = qb.build()\n        \n        conn = None\n        try:\n            conn = sqlite3.connect(\"production.db\")\n            cursor = conn.cursor()\n            cursor.execute(query, params)\n            return cursor.fetchone()\n        finally:\n            if conn:\n                conn.close()\n        \n    except Exception as e:\n        return None\n",
+                "patch_explanation": "Applied template-based fix for SQL. Used industry best practices and parameterized inputs to prevent the vulnerability.",
+                "verification_status": "PASS",
+                "verification_reasoning": "Automated Tests PASSED.\nRegression Test: PASS (Normal input returned data)\nSecurity Test: PASS (no payload succeeded)\nAST Analysis PASSED: No unsafe query construction detected.\nLLM Review: LLM review skipped for speed - AST, regression, and security tests are sufficient",
+                "iteration_count": 2,
+                "max_iterations": 3
+            }
+        }
+    ]
+}

@@ -136,8 +136,10 @@ class TestHarness:
         result = {"success": False, "data": None, "error": None}
         
         def build_input(p):
+            # if we've already been given a dict, just use it
             if isinstance(p, dict):
                 return p
+            # build input payloads according to the vulnerability type
             if vuln_type == "SQL":
                 return {"username": p, "request_id": "test_run_1"}
             elif vuln_type == "XSS":
@@ -146,6 +148,30 @@ class TestHarness:
                 return {"filename": p}
             elif vuln_type == "BUFFER_OVERFLOW":
                 return {"input": p}
+            elif vuln_type == "INFO_EXPOSURE":
+                # some vulnerabilities expect both a key and data field
+                return {"key": "test", "data": p}
+            elif vuln_type == "XXE":
+                # pass xml string inside a JSON object so the server will dump it to a string
+                return {"xml": p}
+            elif vuln_type == "SSRF":
+                return {"url": p}
+            elif vuln_type == "INSECURE_RANDOMNESS":
+                # include a dummy user_id for token generation
+                return {"user_id": 1, "data": p}
+            elif vuln_type == "RACE_CONDITION":
+                # additional fields are accepted by the vulnerable function
+                return {"data": p}
+            elif vuln_type == "BOLA":
+                # the payloads in config are already JSON strings
+                try:
+                    return json.loads(p)
+                except Exception:
+                    return {"data": p}
+            elif vuln_type == "HARDCODED_SECRETS":
+                return {"data": p}
+            elif vuln_type == "DESERIALIZATION":
+                return {"session_data": p}
             else:
                 return {"data": p}
         

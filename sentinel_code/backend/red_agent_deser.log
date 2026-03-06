@@ -1,0 +1,4 @@
+  File "C:\Projects\Sentinel\sentinel_code\backend\test_red_agent_deser.py", line 27
+    print("
+          ^
+SyntaxError: unterminated string literal (detected at line 27)

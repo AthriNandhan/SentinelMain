@@ -1,0 +1,39 @@
+{
+    "workflow_id": "cabe3f3b-88e4-4195-a449-c1aca9855713",
+    "events": [
+        {
+            "timestamp": "2026-03-06T21:25:27.916051",
+            "agent": "Orchestrator",
+            "action": "Workflow Started",
+            "details": {
+                "code_path": "C:\\Projects\\Sentinel\\vulnerabilities\\6_hardcoded_secrets.py",
+                "vulnerability_type": "HARDCODED_SECRETS",
+                "exploit_success": false,
+                "exploit_payloads": [],
+                "patch_diff": null,
+                "patch_explanation": null,
+                "verification_status": "PENDING",
+                "verification_reasoning": null,
+                "iteration_count": 0,
+                "max_iterations": 3
+            }
+        },
+        {
+            "timestamp": "2026-03-06T21:25:35.085201",
+            "agent": "Orchestrator",
+            "action": "Workflow Completed",
+            "details": {
+                "code_path": "C:\\Projects\\Sentinel\\vulnerabilities\\6_hardcoded_secrets.py",
+                "vulnerability_type": "HARDCODED_SECRETS",
+                "exploit_success": false,
+                "exploit_payloads": [],
+                "patch_diff": null,
+                "patch_explanation": null,
+                "verification_status": "PASS",
+                "verification_reasoning": "No successful exploit payloads; target appears secure or not vulnerable.",
+                "iteration_count": 0,
+                "max_iterations": 3
+            }
+        }
+    ]
+}

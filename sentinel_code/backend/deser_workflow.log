@@ -1,0 +1,74 @@
+C:\Projects\Sentinel\sentinel_code\backend\app\services\llm.py:1: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+
+======================================================================
+DESERIALIZATION VULNERABILITY WORKFLOW TEST
+======================================================================
+
+Starting workflow for: 5_insecure_deserialization.py
+Vulnerability type: DESERIALIZATION
+
+--- Red Agent: Attacking ---
+Executing payloads (DESERIALIZATION) against C:\Projects\Sentinel\sentinel_code\backend\..\..\vulnerabilities\5_insecure_deserialization.py via TestHarness...
+Starting Flask server...
+Flask server is up and responding!
+Trying payload: gASVEgAAAAAAAACMCGJ1aWx0aW5zlIwEZXZhbJSTlIwKcHJpbnQoMSkyXZSFlFKULg==
+Exploit VERIFIED! Flag leaked: {'data': "pickle error: unmatched ']' (<string>, line 1) | Command executed: SECRET_FLAG_DATA_123", 'status': 'success'}
+PoC written to C:\Projects\Sentinel\sentinel_code\backend\..\..\vulnerabilities\poc_exploit.py
+--- Blue Agent: Patching ---
+Iter 0: Simulating a flawed patch generation...
+--- Green Agent: Verifying ---
+Running AST Analysis...
+AST Analysis PASSED: No unsafe query construction detected.
+
+Executing Test Harness on patched code...
+Starting Flask server...
+Flask server is up and responding!
+Test Results:
+Regression Test: PASS (Normal input returned data)
+Security Test: PASS (no payload succeeded)
+Verification Result: PASS
+Reasoning: Automated Tests PASSED.
+Regression Test: PASS (Normal input returned data)
+Security Test: PASS (no payload succeeded)
+AST Analysis PASSED: No unsafe query construction detected.
+LLM Review: LLM review skipped for speed - AST, regression, and security tests are sufficient
+
+--- RESULTS ---
+Exploit Success: True
+Exploit Payloads: ['gASVEgAAAAAAAACMCGJ1aWx0aW5zlIwEZXZhbJSTlIwKcHJpbnQoMSkyXZSFlFKULg==']
+Verification Status: PASS
+Iteration Count: 1
+Verification Reasoning: Automated Tests PASSED.
+Regression Test: PASS (Normal input returned data)
+Security Test: PASS (no payload succeeded)
+AST Analysis PASSED: No unsafe query construction detected.
+LLM Review: LLM review skipped for speed - AST, regression, and security tests are sufficient
+
+======================================================================
+Traceback (most recent call last):
+  File "C:\Projects\Sentinel\sentinel_code\backend\test_deser_workflow.py", line 49, in <module>
+    print("\u2713 DESERIALIZATION WORKFLOW SUCCESSFUL")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Projects\Sentinel\sentinel_code\backend\test_deser_workflow.py", line 55, in <module>
+    print(f"\n\u2717 ERROR: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2717' in position 2: character maps to <undefined>
