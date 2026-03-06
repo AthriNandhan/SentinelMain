@@ -109,6 +109,19 @@ class SessionHandler:
         else:
             return {"status": 403, "message": "Invalid Session"}
 
+def handle(payload):
+    """
+    Handle function for Flask app integration.
+    Expects JSON payload with 'Authorization' header (as data).
+    """
+    try:
+        data = json.loads(payload)
+        handler = SessionHandler()
+        result = handler.handle_request(data)
+        return str(result) if result else "No session"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 # Example of how the application is run
 if __name__ == "__main__":
     handler = SessionHandler()

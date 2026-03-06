@@ -45,10 +45,27 @@ def process_search(request_json):
 
         sql = qb.to_sql()
         
-        conn = sqlite3.connect("app.db")
+        conn = sqlite3.connect("production.db")
         cursor = conn.cursor()
         cursor.execute(sql)
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        conn.close()
+        return result
         
     except Exception as e:
         return {"error": "Search failed"}
+
+def handle(payload):
+    """
+    Handle function for Flask app integration.
+    Expects JSON payload with search parameters.
+    """
+    try:
+        result = process_search(payload)
+        if isinstance(result, dict):
+            return str(result)
+        elif result:
+            return str(result)
+        return "No results"
+    except Exception as e:
+        return f"Error: {str(e)}"

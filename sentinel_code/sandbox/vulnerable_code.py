@@ -58,3 +58,21 @@ def get_secure_user_data(request_payload):
         
     except Exception as e:
         return f"Error processing request {request_id}: {str(e)}"
+
+def handle(payload):
+    """
+    Handle function - dispatcher for different vulnerability code.
+    This is called by the Flask app in app.py.
+    """
+    try:
+        data = json.loads(payload)
+        username = data.get("username")
+        request_id = data.get("request_id", "default")
+        
+        if username:
+            result = get_secure_user_data(payload)
+            if result:
+                return str(result)
+        return "No data"
+    except Exception as e:
+        return f"Error: {str(e)}"

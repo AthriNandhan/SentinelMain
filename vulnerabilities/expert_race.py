@@ -73,6 +73,23 @@ class TransactionManager:
 def worker(manager, user_id, amount, txn_id):
     manager.process_transaction(user_id, amount, txn_id)
 
+def handle(payload):
+    """
+    Handle function for Flask app integration.
+    Expects JSON payload with transaction details.
+    """
+    try:
+        import json
+        data = json.loads(payload)
+        manager = TransactionManager()
+        user_id = data.get("user_id", "user_123")
+        amount = data.get("amount", 100.0)
+        txn_id = data.get("transaction_id", str(uuid.uuid4()))
+        result = manager.process_transaction(user_id, amount, txn_id)
+        return f"Transaction processed: {result}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
 if __name__ == "__main__":
     # Simulation of the Race Condition
     manager = TransactionManager()

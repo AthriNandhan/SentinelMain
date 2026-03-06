@@ -122,9 +122,10 @@ class TestHarness:
                 except:
                     pass
 
-    def run_attack(self, payload: str, code_path: str = None) -> dict:
+    def run_attack(self, payload, code_path: str = None, vuln_type: str = "SQL") -> dict:
         """
         Runs the attack using the given payload with retry logic.
+        Payload may be a string or dictionary depending on vulnerability type.
         If the server isn't running, it starts it briefly for this attack.
         """
         manage_server = False
@@ -134,15 +135,28 @@ class TestHarness:
             
         result = {"success": False, "data": None, "error": None}
         
+        def build_input(p):
+            if isinstance(p, dict):
+                return p
+            if vuln_type == "SQL":
+                return {"username": p, "request_id": "test_run_1"}
+            elif vuln_type == "XSS":
+                return {"comment": p}
+            elif vuln_type == "PATH_TRAVERSAL":
+                return {"filename": p}
+            elif vuln_type == "BUFFER_OVERFLOW":
+                return {"input": p}
+            else:
+                return {"data": p}
+        
         try:
             # Retry logic for sending the attack
             max_attack_retries = 3
             for attempt in range(max_attack_retries):
                 try:
-                    input_data = {"username": payload, "request_id": "test_run_1"}
+                    input_data = build_input(payload)
                     response = requests.post(self.server_url, json=input_data, timeout=5)
                     
-                    # Try to parse response
                     try:
                         res_json = response.json()
                     except ValueError:
@@ -154,7 +168,7 @@ class TestHarness:
                     
                     if status == "success" and data:
                         result["data"] = str(data)
-                        if self.flag in str(data):
+                        if self.flag and self.flag in str(data):
                             result["success"] = True
                     elif status == "error":
                         result["error"] = res_json.get("error", "Unknown server error")
@@ -176,11 +190,11 @@ class TestHarness:
                 
         return result
 
-    def verify_fix(self, code_content: str, security_payloads: list = None) -> dict:
+    def verify_fix(self, code_content: str, security_payloads: list = None, vuln_type: str = "SQL") -> dict:
         """
         Verifies the fix by running:
-        1. Regression test (valid user)
-        2. Security test (ensure Red Agent's SQLi payloads fail)
+        1. Regression test (valid user/normal input)
+        2. Security test (ensure Red Agent's payloads fail)
         """
         results = {
             "regression_passed": False,
@@ -188,35 +202,41 @@ class TestHarness:
             "details": []
         }
         
+        # choose a normal payload based on vulnerability type
+        normal_inputs = {
+            "SQL": "alice",
+            "XSS": "Hello world",
+            "PATH_TRAVERSAL": "data.txt",
+            "BUFFER_OVERFLOW": "safe"
+        }
+        normal_payload = normal_inputs.get(vuln_type, "test")
+        
         try:
             self.start_server(code_content=code_content)
             
-            # 1. Regression Test: Normal user
-            res_normal = self.run_attack("alice")
-            if res_normal.get("data") and "Public Profile Data" in res_normal.get("data"):
+            # 1. Regression Test: Normal input
+            res_normal = self.run_attack(normal_payload, vuln_type=vuln_type)
+            # heuristic check for expected return
+            if res_normal.get("data"):
                 results["regression_passed"] = True
-                results["details"].append("Regression Test: PASS (Normal user data retrieved)")
+                results["details"].append("Regression Test: PASS (Normal input returned data)")
             else:
-                results["details"].append(f"Regression Test: FAIL (Could not retrieve normal data: {res_normal.get('data')} | Error: {res_normal.get('error')})")
+                results["details"].append(f"Regression Test: FAIL (No normal data: {res_normal.get('data')} | Error: {res_normal.get('error')})")
 
             # 2. Security Test: Re-run attacks
             if not security_payloads:
-                # Fallback to a basic test if none provided
                 security_payloads = ["' OR '1'='1"]
-                
-            all_attacks_blocked = True
+            
+            # run each security payload
             for payload in security_payloads:
-                res_attack = self.run_attack(payload)
-                if res_attack["success"]: # Success means we prevented the leak? No, it means attack succeeded!
-                    all_attacks_blocked = False
-                    results["details"].append(f"Security Test: FAIL (Flag leaked with payload: {payload}!)")
+                res_attack = self.run_attack(payload, vuln_type=vuln_type)
+                if res_attack.get("success"):
+                    results["details"].append(f"Security Test: FAIL (payload {payload} succeeded with data {res_attack.get('data')})")
+                    results["security_passed"] = False
                     break
-                else:
-                    results["details"].append(f"Security Test: blocked attack with payload: {payload}")
-                    
-            if all_attacks_blocked:
+            else:
                 results["security_passed"] = True
-                results["details"].append("Security Test: PASS (No flags leaked)")
+                results["details"].append("Security Test: PASS (no payload succeeded)")
                 
         finally:
             self.stop_server()

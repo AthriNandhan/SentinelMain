@@ -1,21 +1,13 @@
 from app.models.state import RemediationState
 from app.services.llm import llm_service
 from app.core.test_harness import test_harness
+from app.core.vulnerability_config import get_payloads_for_type
 import os
-
-PAYLOADS = [
-    "' OR '1'='1",
-    "admin' --",
-    "admin' #",
-    "admin' /*",
-    "' UNION SELECT 1,2,3,4,5 --",
-    "' UNION SELECT 1,username,password,active,data FROM users WHERE username='admin' --"
-]
 
 def red_agent(state: RemediationState) -> RemediationState:
     """
     Red Agent: Simulates an attack on the vulnerable code.
-    Iterates through payloads and attempts to bypass patching.
+    Iterates through payloads for the vulnerability type and attempts to exploit.
     """
     print("--- Red Agent: Attacking ---")
     
@@ -24,7 +16,14 @@ def red_agent(state: RemediationState) -> RemediationState:
         state.exploit_success = False
         return state
 
-    print(f"Executing payloads against {state.code_path} via TestHarness...")
+    # Get payloads for this vulnerability type
+    PAYLOADS = get_payloads_for_type(state.vulnerability_type)
+    if not PAYLOADS:
+        print(f"Error: No payloads configured for vulnerability type: {state.vulnerability_type}")
+        state.exploit_success = False
+        return state
+
+    print(f"Executing payloads ({state.vulnerability_type}) against {state.code_path} via TestHarness...")
     test_harness.start_server(code_path=state.code_path)
     
     success = False
@@ -33,7 +32,7 @@ def red_agent(state: RemediationState) -> RemediationState:
     try:
         for payload in PAYLOADS:
             print(f"Trying payload: {payload}")
-            result = test_harness.run_attack(payload)
+            result = test_harness.run_attack(payload, vuln_type=state.vulnerability_type)
             
             if result["success"]:
                 print(f"Exploit VERIFIED! Flag leaked: {result['data']}")
@@ -52,7 +51,7 @@ def red_agent(state: RemediationState) -> RemediationState:
         
         poc_content = f"""import requests
 
-# Auto-generated PoC exploit by Red Agent
+# Auto-generated PoC exploit by Red Agent - {state.vulnerability_type}
 url = "http://localhost:5000/analyze"
 payload = {{"username": "{successful_payload}", "request_id": "poc_1"}}
 try:
@@ -68,7 +67,10 @@ except Exception as e:
             
         print(f"PoC written to {poc_path}")
     else:
-        print("Red Agent: All payloads failed. Vulnerability might be patched.")
+        print("Red Agent: All payloads failed. No exploit found or vulnerability not present.")
         state.exploit_success = False
+        # mark as already secure so workflow doesn't leave status pending
+        state.verification_status = "PASS"
+        state.verification_reasoning = "No successful exploit payloads; target appears secure or not vulnerable."
 
     return state

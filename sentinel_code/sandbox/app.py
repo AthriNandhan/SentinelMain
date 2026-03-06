@@ -40,7 +40,16 @@ def analyze():
         import json
         payload = json.dumps(data)
         
-        result = vulnerable_code.get_secure_user_data(payload)
+        # delegate to the vulnerable code module's generic entrypoint
+        # each vulnerability file should provide a `handle` function
+        result = None
+        if hasattr(vulnerable_code, 'handle'):
+            result = vulnerable_code.handle(payload)
+        elif hasattr(vulnerable_code, 'get_secure_user_data'):
+            # backwards compatibility with original SQL file
+            result = vulnerable_code.get_secure_user_data(payload)
+        else:
+            raise AttributeError('vulnerable_code module has no handler function')
         
         if result:
             return jsonify({"status": "success", "data": result})

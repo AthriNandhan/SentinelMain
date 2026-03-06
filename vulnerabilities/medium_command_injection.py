@@ -1,6 +1,7 @@
 # Select in Dropdown: RCE (Remote Code Execution)
 import os
 import subprocess
+import json
 
 def ping_host(hostname):
     """
@@ -25,3 +26,16 @@ def ping_host(hostname):
         return output.decode()
     except Exception as e:
         return str(e)
+
+def handle(payload):
+    """
+    Handle function for Flask app integration.
+    Expects JSON payload with 'input' field (command injection payload).
+    """
+    try:
+        data = json.loads(payload)
+        hostname = data.get("input", "")
+        result = ping_host(hostname)
+        return str(result) if result else "Command executed"
+    except Exception as e:
+        return f"Error: {str(e)}"

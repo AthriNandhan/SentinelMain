@@ -7,7 +7,8 @@ const StatusView = ({ workflowId }) => {
     const { data, error, isLoading } = useQuery({
         queryKey: ['workflow', workflowId],
         queryFn: () => getStatus(workflowId),
-        refetchInterval: 1000,
+        // keep polling only while workflow is in progress
+        refetchInterval: (data && data.state && data.state.verification_status === 'PENDING') ? 1000 : false,
         enabled: !!workflowId,
     });
     const [applying, setApplying] = React.useState(false);
@@ -109,7 +110,7 @@ const StatusView = ({ workflowId }) => {
                         )}
                     </div>
                     <pre className="bg-black p-4 rounded text-green-300 font-mono text-xs overflow-auto flex-grow max-h-[400px]">
-                        {state.patch_diff || "Waiting for patch generation..."}
+                        {state.patch_diff || (state.verification_status === 'PASS' ? "No patch required." : "Waiting for patch generation...")}
                     </pre>
                 </div>
             </div>

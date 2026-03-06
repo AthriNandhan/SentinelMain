@@ -5,6 +5,7 @@ import uuid
 from app.models.state import RemediationState
 from app.graph.workflow import app as workflow_app
 from app.services.logger import get_logger
+from app.core.vulnerability_config import VULNERABILITIES
 
 router = APIRouter()
 
@@ -83,3 +84,21 @@ async def apply_patch(workflow_id: str):
         return {"status": "success", "message": "Patch applied successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/vulnerabilities")
+async def get_vulnerabilities():
+    """Get list of available vulnerability types."""
+    vulnerabilities = []
+    for code, config in VULNERABILITIES.items():
+        vulnerabilities.append({
+            "code": code,
+            "name": config["display_name"],
+            "description": config["description"],
+            "payload_count": len(config["payloads"]),
+            "example_payloads": config["payloads"][:2]
+        })
+    
+    return {
+        "total": len(vulnerabilities),
+        "vulnerabilities": vulnerabilities
+    }
