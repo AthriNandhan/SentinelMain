@@ -8,7 +8,7 @@ def test_pipeline():
         vulnerability_type="SQL Injection",
         iteration_count=0
     )
-    
+
     final_state = workflow_app.invoke(initial_state)
     print("\n--- Final State ---")
     print(f"Exploit Success: {final_state.get('exploit_success')}")

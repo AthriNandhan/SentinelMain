@@ -33,6 +33,8 @@ class TestHarness:
                 f.write(code_content)
         
         env = os.environ.copy()
+        env['FLASK_ENV'] = 'production'
+        env['PYTHONUNBUFFERED'] = '1'
         
         print("Starting Flask server...")
         self.server_process = subprocess.Popen(
@@ -40,17 +42,47 @@ class TestHarness:
             cwd=self.sandbox_dir,
             env=env,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
         )
         
-        # Wait for server to start
-        time.sleep(2)
+        # Wait and retry for server startup
+        max_retries = 10
+        retry_count = 0
+        server_ready = False
         
-        # Verify server is up
-        try:
-            requests.post(self.server_url, json={"username": "alice", "request_id": "ping"}, timeout=2)
-        except Exception as e:
-            print(f"Warning: Server might not be fully up: {e}")
+        while retry_count < max_retries and not server_ready:
+            time.sleep(1)
+            try:
+                response = requests.post(
+                    self.server_url, 
+                    json={"username": "alice", "request_id": "ping"}, 
+                    timeout=2
+                )
+                server_ready = True
+                print("Flask server is up and responding!")
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+                retry_count += 1
+                print(f"Waiting for server... ({retry_count}/{max_retries})")
+                
+                # Check if process has died
+                if self.server_process.poll() is not None:
+                    stdout_output = self.server_process.stdout.read() if self.server_process.stdout else ""
+                    print(f"ERROR: Flask process exited unexpectedly!")
+                    print(f"Server output:\n{stdout_output}")
+                    raise RuntimeError(f"Flask server failed to start. Output: {stdout_output}")
+        
+        if not server_ready:
+            # Try to kill the process and read output
+            if self.server_process:
+                self.server_process.terminate()
+                try:
+                    stdout_output, _ = self.server_process.communicate(timeout=2)
+                    print(f"Server output:\n{stdout_output}")
+                except Exception as e:
+                    print(f"Could not retrieve server output: {e}")
+            raise RuntimeError(f"Flask server did not start after {max_retries} attempts")
 
     def stop_server(self):
         """Stops the Flask app and restores original vulnerable code."""
@@ -67,7 +99,7 @@ class TestHarness:
 
     def run_attack(self, payload: str, code_path: str = None) -> dict:
         """
-        Runs the attack using the given payload.
+        Runs the attack using the given payload with retry logic.
         If the server isn't running, it starts it briefly for this attack.
         """
         manage_server = False
@@ -78,28 +110,41 @@ class TestHarness:
         result = {"success": False, "data": None, "error": None}
         
         try:
-            input_data = {"username": payload, "request_id": "test_run_1"}
-            response = requests.post(self.server_url, json=input_data, timeout=5)
-            # Flask may return 500 if the code raises an exception or syntax error
-            
-            try:
-                res_json = response.json()
-            except ValueError:
-                result["error"] = f"Invalid JSON response. Status: {response.status_code}, Text: {response.text}"
-                return result
-                
-            data = res_json.get("data")
-            status = res_json.get("status")
-            
-            if status == "success" and data:
-                result["data"] = str(data)
-                if self.flag in str(data):
-                    result["success"] = True
-            elif status == "error":
-                result["error"] = res_json.get("error", "Unknown server error")
-        except Exception as e:
-            result["error"] = str(e)
-            
+            # Retry logic for sending the attack
+            max_attack_retries = 3
+            for attempt in range(max_attack_retries):
+                try:
+                    input_data = {"username": payload, "request_id": "test_run_1"}
+                    response = requests.post(self.server_url, json=input_data, timeout=5)
+                    
+                    # Try to parse response
+                    try:
+                        res_json = response.json()
+                    except ValueError:
+                        result["error"] = f"Invalid JSON response. Status: {response.status_code}, Text: {response.text}"
+                        return result
+                        
+                    data = res_json.get("data")
+                    status = res_json.get("status")
+                    
+                    if status == "success" and data:
+                        result["data"] = str(data)
+                        if self.flag in str(data):
+                            result["success"] = True
+                    elif status == "error":
+                        result["error"] = res_json.get("error", "Unknown server error")
+                    
+                    return result
+                    
+                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                    if attempt < max_attack_retries - 1:
+                        print(f"Attack attempt {attempt + 1} failed, retrying... ({str(e)[:50]})")
+                        time.sleep(1)
+                    else:
+                        result["error"] = f"Failed to execute attack after {max_attack_retries} attempts: {str(e)}"
+                except Exception as e:
+                    result["error"] = str(e)
+                    break
         finally:
             if manage_server:
                 self.stop_server()
