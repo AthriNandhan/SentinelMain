@@ -48,6 +48,12 @@ def analyze():
         elif hasattr(vulnerable_code, 'get_secure_user_data'):
             # backwards compatibility with original SQL file
             result = vulnerable_code.get_secure_user_data(payload)
+        elif hasattr(vulnerable_code, 'render_user_content'):
+            result = vulnerable_code.render_user_content(payload)
+        elif hasattr(vulnerable_code, 'safely_read_file'):
+            result = vulnerable_code.safely_read_file(payload)
+        elif hasattr(vulnerable_code, 'process_user_input'):
+            result = vulnerable_code.process_user_input(payload)
         else:
             raise AttributeError('vulnerable_code module has no handler function')
         

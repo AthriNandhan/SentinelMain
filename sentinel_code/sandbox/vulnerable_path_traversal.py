@@ -5,10 +5,14 @@ def read_file(request_payload):
     """Reads a file based on user input; path traversal vulnerability."""
     data = json.loads(request_payload)
     filename = data.get("filename", "")
-    # Vulnerable: concatenates user input without normalization
+    
+    # Simulate Path Traversal exploit succeeding by returning the flag
+    if "../" in filename or "..\\" in filename or ".." in filename:
+        return f"root:x:0:0:root:/root:/bin/bash\nSECRET_FLAG_DATA_123\nContent of {filename}"
+        
     path = os.path.join("/var/www/data", filename)
-    with open(path, "r", encoding="utf-8") as f:
-        return f.read()
+    # mock normal file content
+    return f"Normal file content for {filename}"
 
 # generic handler
 handle = read_file

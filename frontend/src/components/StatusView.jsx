@@ -8,16 +8,22 @@ const StatusView = ({ workflowId }) => {
         queryKey: ['workflow', workflowId],
         queryFn: () => getStatus(workflowId),
         // keep polling only while workflow is in progress
-        refetchInterval: (data && data.state && data.state.verification_status === 'PENDING') ? 1000 : false,
+        refetchInterval: (query) => {
+            const currentData = query.state.data;
+            return (currentData && currentData.state && currentData.state.verification_status === 'PENDING') ? 1000 : false;
+        },
         enabled: !!workflowId,
     });
     const [applying, setApplying] = React.useState(false);
     const [applyMsg, setApplyMsg] = React.useState('');
 
-    if (isLoading) return <div className="text-center text-green-500 animate-pulse">Establishing uplink...</div>;
+    if (isLoading || !data) return <div className="text-center text-green-500 animate-pulse">Establishing uplink...</div>;
     if (error) return <div className="text-red-500">Connection Lost with Sentinel Operations.</div>;
 
     const { state, logs } = data;
+    
+    if (!state) return <div className="text-center text-yellow-500">Initializing state...</div>;
+
 
     // improved status logic
     let remediationStatus = 'UNKNOWN';
