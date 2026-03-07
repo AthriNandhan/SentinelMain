@@ -23,3 +23,6 @@ class RemediationState(BaseModel):
     # Workflow Metadata
     iteration_count: int = Field(0, description="Current iteration of the fix-verify loop.")
     max_iterations: int = Field(3, description="Maximum number of retries allowed.")
+    
+    # Identifier for logging/tracking
+    workflow_id: Optional[str] = Field(None, description="Unique id assigned when workflow begins.")

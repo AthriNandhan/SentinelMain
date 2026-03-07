@@ -18,6 +18,9 @@ class RemediationRequest(BaseModel):
     vulnerability_type: str
 
 def run_workflow(workflow_id: str, initial_state: RemediationState):
+    # ensure the state knows its own workflow ID, agents can reference it
+    initial_state.workflow_id = workflow_id
+
     logger = get_logger(workflow_id)
     logger.log_event("Orchestrator", "Workflow Started", initial_state.dict())
     
@@ -29,11 +32,18 @@ def run_workflow(workflow_id: str, initial_state: RemediationState):
         # Note: LangGraph might return a dict or object depending on config.
         # Assuming dict for now as that's typical with StateGraph
         final_state = RemediationState(**final_state_dict)
+        # Preserve workflow_id if not returned by graph
+        final_state.workflow_id = workflow_id
         workflow_store[workflow_id] = final_state
         logger.log_event("Orchestrator", "Workflow Completed", final_state.dict())
     except Exception as e:
         logger.log_event("Orchestrator", "Workflow Failed", {"error": str(e)})
-        print(f"Workflow failed: {e}")
+        # also mirror to stdout for visibility
+        try:
+            logger.log_and_print("Orchestrator", f"Workflow failed: {e}")
+        except Exception:
+            # if logger itself fails, fall back to print
+            print(f"Workflow failed: {e}")
         import traceback
         traceback.print_exc()
         # Store state with error info if possible, or just log
@@ -49,6 +59,8 @@ async def start_remediation(request: RemediationRequest, background_tasks: Backg
         iteration_count=0
     )
     
+    # tag the state so downstream agents can log via workflow_id
+    initial_state.workflow_id = workflow_id
     workflow_store[workflow_id] = initial_state
     
     background_tasks.add_task(run_workflow, workflow_id, initial_state)

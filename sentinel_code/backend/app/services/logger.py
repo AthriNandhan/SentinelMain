@@ -33,6 +33,18 @@ class WorkflowLogger:
             f.seek(0)
             json.dump(data, f, indent=4)
 
+    def log_and_print(self, agent: str, action: str, details: Dict[str, Any] = None):
+        """Convenience helper used by agents.
+        Writes the message to stdout and records an event in the log file.
+        """
+        # print message in a human-readable format
+        if details:
+            print(action, details)
+        else:
+            print(action)
+        # ensure details isn't None when logging
+        self.log_event(agent, action, details or {})
+
     def get_logs(self):
         with open(self.log_file, "r") as f:
             return json.load(f)

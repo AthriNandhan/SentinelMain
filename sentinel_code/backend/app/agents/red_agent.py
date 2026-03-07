@@ -2,6 +2,7 @@ from app.models.state import RemediationState
 from app.services.llm import llm_service
 from app.core.test_harness import test_harness
 from app.core.vulnerability_config import get_payloads_for_type
+from app.services.logger import get_logger
 import os
 
 def red_agent(state: RemediationState) -> RemediationState:
@@ -9,21 +10,37 @@ def red_agent(state: RemediationState) -> RemediationState:
     Red Agent: Simulates an attack on the vulnerable code.
     Iterates through payloads for the vulnerability type and attempts to exploit.
     """
-    print("--- Red Agent: Attacking ---")
+    logger = get_logger(state.workflow_id) if state.workflow_id else None
+    if logger:
+        logger.log_and_print("Red Agent", "--- Red Agent: Attacking ---")
+    else:
+        print("--- Red Agent: Attacking ---")
     
     if not os.path.exists(state.code_path):
-        print(f"Error: File {state.code_path} not found.")
+        msg = f"Error: File {state.code_path} not found."
+        if logger:
+            logger.log_and_print("Red Agent", msg)
+        else:
+            print(msg)
         state.exploit_success = False
         return state
 
     # Get payloads for this vulnerability type
     PAYLOADS = get_payloads_for_type(state.vulnerability_type)
     if not PAYLOADS:
-        print(f"Error: No payloads configured for vulnerability type: {state.vulnerability_type}")
+        msg = f"Error: No payloads configured for vulnerability type: {state.vulnerability_type}"
+        if logger:
+            logger.log_and_print("Red Agent", msg)
+        else:
+            print(msg)
         state.exploit_success = False
         return state
 
-    print(f"Executing payloads ({state.vulnerability_type}) against {state.code_path} via TestHarness...")
+    msg = f"Executing payloads ({state.vulnerability_type}) against {state.code_path} via TestHarness..."
+    if logger:
+        logger.log_and_print("Red Agent", msg)
+    else:
+        print(msg)
     test_harness.stop_server()  # Ensure clean state
     test_harness.start_server(code_path=state.code_path)
     
@@ -32,16 +49,28 @@ def red_agent(state: RemediationState) -> RemediationState:
     
     try:
         for payload in PAYLOADS:
-            print(f"Trying payload: {payload}")
+            attempt_msg = f"Trying payload: {payload}"
+            if logger:
+                logger.log_and_print("Red Agent", attempt_msg)
+            else:
+                print(attempt_msg)
             result = test_harness.run_attack(payload, vuln_type=state.vulnerability_type)
             
             if result["success"]:
-                print(f"Exploit VERIFIED! Flag leaked: {result['data']}")
+                exploit_msg = f"Exploit VERIFIED! Flag leaked: {result['data']}"
+                if logger:
+                    logger.log_and_print("Red Agent", exploit_msg)
+                else:
+                    print(exploit_msg)
                 success = True
                 successful_payload = payload
                 break
             else:
-                print(f"Failed. Output: {result.get('data')} | Error: {result.get('error')}")
+                failure_msg = f"Failed. Output: {result.get('data')} | Error: {result.get('error')}"
+                if logger:
+                    logger.log_and_print("Red Agent", failure_msg)
+                else:
+                    print(failure_msg)
                 
     finally:
         test_harness.stop_server()
@@ -104,9 +133,17 @@ except Exception as e:
         with open(poc_path, "w") as f:
             f.write(poc_content)
             
-        print(f"PoC written to {poc_path}")
+        msg2 = f"PoC written to {poc_path}"
+        if logger:
+            logger.log_and_print("Red Agent", msg2)
+        else:
+            print(msg2)
     else:
-        print("Red Agent: All payloads failed. No exploit found or vulnerability not present.")
+        msg = "Red Agent: All payloads failed. No exploit found or vulnerability not present."
+        if logger:
+            logger.log_and_print("Red Agent", msg)
+        else:
+            print(msg)
         state.exploit_success = False
         # mark as already secure so workflow doesn't leave status pending
         state.verification_status = "PASS"

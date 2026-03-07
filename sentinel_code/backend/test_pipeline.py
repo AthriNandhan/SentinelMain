@@ -32,6 +32,7 @@ def test_single_pipeline(vuln_type):
         vulnerability_type=vuln_type,
         iteration_count=0
     )
+    initial_state.workflow_id = f"pipeline_{vuln_type}"
 
     try:
         final_state = workflow_app.invoke(initial_state)
@@ -90,6 +91,7 @@ def test_all_pipelines():
             vulnerability_type=vuln_type,
             iteration_count=0
         )
+        initial_state.workflow_id = f"pipeline_{vuln_type}"
         try:
             final_state = workflow_app.invoke(initial_state)
             print(f"\n--- Results for {vuln_type} ---")

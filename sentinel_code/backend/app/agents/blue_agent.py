@@ -1,6 +1,7 @@
 from app.models.state import RemediationState
 from app.services.llm import llm_service
 from app.core.vulnerability_config import get_fix_template_for_type
+from app.services.logger import get_logger
 import os
 
 def blue_agent(state: RemediationState) -> RemediationState:
@@ -8,14 +9,22 @@ def blue_agent(state: RemediationState) -> RemediationState:
     Blue Agent: Generates a fix for the vulnerability.
     Uses template-based fixes for known vulnerability types, with LLM fallback.
     """
-    print("--- Blue Agent: Patching ---")
+    logger = get_logger(state.workflow_id) if state.workflow_id else None
+    if logger:
+        logger.log_and_print("Blue Agent", "--- Blue Agent: Patching ---")
+    else:
+        print("--- Blue Agent: Patching ---")
     
     with open(state.code_path, "r") as f:
         code_content = f.read()
     
     # Demonstrate agent cycling by intentionally failing the first iteration
     if state.iteration_count == 0:
-        print("Iter 0: Simulating a flawed patch generation...")
+        msg = "Iter 0: Simulating a flawed patch generation..."
+        if logger:
+            logger.log_and_print("Blue Agent", msg)
+        else:
+            print(msg)
         state.patch_diff = code_content.replace(
             "def ", "# INITIAL FLAWED PATCH ATTEMPT\ndef "
         )
@@ -29,9 +38,15 @@ def blue_agent(state: RemediationState) -> RemediationState:
             state.patch_diff = fix_template
             fix_type = state.vulnerability_type.replace("_", " ")
             state.patch_explanation = f"Applied template-based fix for {fix_type}. Used industry best practices and parameterized inputs to prevent the vulnerability."
+            if logger:
+                logger.log_and_print("Blue Agent", f"Applied template-based fix for {fix_type}.")
         else:
             # Fallback to LLM for unknown vulnerabilities
-            print(f"No template found for {state.vulnerability_type}, using LLM...")
+            msg = f"No template found for {state.vulnerability_type}, using LLM..."
+            if logger:
+                logger.log_and_print("Blue Agent", msg)
+            else:
+                print(msg)
             prompt = f"""
             You are an expert Secure Code Developer fixing {state.vulnerability_type} vulnerabilities.
             

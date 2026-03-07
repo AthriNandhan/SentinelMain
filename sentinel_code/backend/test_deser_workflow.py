@@ -25,12 +25,21 @@ initial_state = RemediationState(
     vulnerability_type="DESERIALIZATION",
     iteration_count=0
 )
+# assign an identifier so logging will capture agent output during the test
+initial_state.workflow_id = "test_deser"
 
 print(f"\nStarting workflow for: {os.path.basename(code_path)}")
 print(f"Vulnerability type: DESERIALIZATION\n")
 
 try:
     final_state = workflow_app.invoke(initial_state)
+    
+    # dump collected log events for visibility during test
+    from app.services.logger import get_logger
+    log_data = get_logger(initial_state.workflow_id).get_logs()
+    print("\n--- LOG EVENTS ---")
+    for evt in log_data.get("events", []):
+        print(evt)
     
     print("\n--- RESULTS ---")
     print(f"Exploit Success: {final_state.get('exploit_success')}")

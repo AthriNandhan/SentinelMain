@@ -344,20 +344,19 @@ cursor.execute(query, [user_id])
 ### Backend Endpoints
 
 ```
-POST   /api/v1/remediate          → Submit code for remediation
-GET    /api/v1/status/{run_id}    → Check remediation status
-GET    /api/v1/logs/{run_id}      → Retrieve execution logs
-GET    /api/v1/vulnerabilities    → List sample vulnerabilities
+POST   /api/remediate          → Submit code for remediation
+GET    /api/status/{workflow_id} → Check remediation status (includes logs)
+GET    /api/vulnerabilities      → List sample vulnerabilities
 GET    /docs                       → Interactive API documentation
 ```
 
 **Example Request:**
 ```bash
-curl -X POST http://localhost:8000/api/v1/remediate \
+curl -X POST http://localhost:8000/api/remediate \
   -H "Content-Type: application/json" \
   -d '{
-    "code": "import sqlite3\ndb = sqlite3.connect(\":memory:\")\ncursor = db.cursor()\nquery = f\"SELECT * FROM users WHERE id = {user_id}\"\ncursor.execute(query)",
-    "vulnerability_type": "sql_injection"
+    "code_path": "/path/to/vulnerable_file.py",
+    "vulnerability_type": "SQL"
   }'
 ```
 
@@ -423,25 +422,27 @@ python main_app.py
 
 Located in: `sentinel_code/backend/logs/`
 
-Each remediation creates a JSON log with:
-- Timestamp
-- Input code
-- Red Agent results
-- Blue Agent fixes
-- Green Agent verification
+Each remediation writes a structured JSON file keyed by `workflow_id`.
+Logs now contain a sequence of timestamped `events` so that any output written
+by the agents (the same lines you would see in the server terminal) is
+captured and can be streamed to the frontend.  These events are included in the
+response to the status API call at `/api/status/{workflow_id}` and surface in
+the **Live Operations Log** panel of the UI.
 
-**Example log:**
+**Example log file:**
 ```json
 {
-  "run_id": "8a0525fc-ef80-4a57-8f7f-8e9e6861c14a",
-  "timestamp": "2024-01-15T10:30:45Z",
-  "input_code": "...",
-  "red_agent_result": {"exploit_success": true, "payload": "..."},
-  "blue_agent_result": {"remediated_code": "...", "explanation": "..."},
-  "green_agent_result": {"verification_status": "PASS", "details": "..."},
-  "total_iterations": 1
+  "workflow_id": "8a0525fc-ef80-4a57-8f7f-8e9e6861c14a",
+  "events": [
+    {"timestamp": "2026-03-07T04:37:31.488713", "agent": "Red Agent", "action": "--- Red Agent: Attacking ---", "details": {}},
+    {"timestamp": "2026-03-07T04:37:31.506285", "agent": "Red Agent", "action": "Executing payloads (...)", "details": {}},
+    ...
+  ]
 }
 ```
+
+The frontend makes use of this API and renders the `events` array in a scrollable
+terminal‑style box so that operators can watch the workflow unfold in real time.
 
 ### Logger Service
 
