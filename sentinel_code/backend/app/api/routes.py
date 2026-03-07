@@ -33,6 +33,9 @@ def run_workflow(workflow_id: str, initial_state: RemediationState):
         logger.log_event("Orchestrator", "Workflow Completed", final_state.dict())
     except Exception as e:
         logger.log_event("Orchestrator", "Workflow Failed", {"error": str(e)})
+        print(f"Workflow failed: {e}")
+        import traceback
+        traceback.print_exc()
         # Store state with error info if possible, or just log
         pass
 

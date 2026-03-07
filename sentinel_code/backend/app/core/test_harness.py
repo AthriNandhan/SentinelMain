@@ -9,7 +9,6 @@ import sys
 import json
 import time
 import shutil
-import requests
 import subprocess
 
 class TestHarness:
@@ -46,10 +45,9 @@ class TestHarness:
             [sys.executable, "app.py"],
             cwd=self.sandbox_dir,
             env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1
+            stdout=None,
+            stderr=None,
+            text=True
         )
         
         # Wait and retry for server startup
@@ -62,23 +60,19 @@ class TestHarness:
             
             # Check if process has died
             if self.server_process.poll() is not None:
-                try:
-                    stdout_output = self.server_process.stdout.read() if self.server_process.stdout else "(no output)"
-                except:
-                    stdout_output = "(could not read output)"
                 print(f"ERROR: Flask process exited unexpectedly!")
-                print(f"Server output:\n{stdout_output}")
-                raise RuntimeError(f"Flask server failed to start. Output: {stdout_output}")
+                raise RuntimeError(f"Flask server failed to start.")
             
             try:
-                response = requests.post(
-                    self.server_url, 
-                    json={"username": "alice", "request_id": "ping"}, 
-                    timeout=2
-                )
-                server_ready = True
-                print("Flask server is up and responding!")
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                import json
+                import urllib.request
+                import urllib.error
+                data = json.dumps({"username": "alice", "request_id": "ping"}).encode('utf-8')
+                req = urllib.request.Request(self.server_url, data=data, headers={'Content-Type': 'application/json'})
+                with urllib.request.urlopen(req, timeout=2) as response:
+                    server_ready = True
+                    print("Flask server is up and responding!")
+            except (urllib.error.URLError, OSError) as e:
                 retry_count += 1
                 print(f"Waiting for server... ({retry_count}/{max_retries})")
         
@@ -181,13 +175,14 @@ class TestHarness:
             for attempt in range(max_attack_retries):
                 try:
                     input_data = build_input(payload)
-                    response = requests.post(self.server_url, json=input_data, timeout=5)
-                    
-                    try:
-                        res_json = response.json()
-                    except ValueError:
-                        result["error"] = f"Invalid JSON response. Status: {response.status_code}, Text: {response.text}"
-                        return result
+                    import json
+                    import urllib.request
+                    import urllib.error
+                    data = json.dumps(input_data).encode('utf-8')
+                    req = urllib.request.Request(self.server_url, data=data, headers={'Content-Type': 'application/json'})
+                    with urllib.request.urlopen(req, timeout=5) as response:
+                        res_text = response.read().decode('utf-8')
+                        res_json = json.loads(res_text)
                         
                     data = res_json.get("data")
                     status = res_json.get("status")
@@ -201,7 +196,7 @@ class TestHarness:
                     
                     return result
                     
-                except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
                     if attempt < max_attack_retries - 1:
                         print(f"Attack attempt {attempt + 1} failed, retrying... ({str(e)[:50]})")
                         time.sleep(1)

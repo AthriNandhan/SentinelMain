@@ -26,23 +26,15 @@ def load_user_session(request_payload):
                 # Pickle failed, but we still capture the decoded bytes to check for keywords
                 result_text = f"pickle error: {inner_e}"
         except Exception:
-            # not valid base64 / pickle payload; maybe a YAML string
-            try:
-                import yaml
-                # using unsafe loader to simulate vulnerability
-                yaml_obj = yaml.load(session_cookie, Loader=yaml.FullLoader)
-                result_text = str(yaml_obj)
-                # for YAML payloads, flag if they contain os.system or other hooks
-                if session_cookie and ("os.system" in session_cookie or "!!python/object/apply" in session_cookie):
-                    exploit_detected = True
-            except Exception as yaml_e:
-                result_text = f"decode error: {yaml_e}"
+            # not valid base64, treat as raw input
+            result_text = "decode error: invalid base64"
+            decoded_data = None
 
         # detect dangerous patterns in raw payload or decoded bytes
         raw_bytes = session_cookie.encode('utf-8')
         if decoded_data:
             raw_bytes = decoded_data
-        if b"os" in raw_bytes or b"system" in raw_bytes or b"eval" in raw_bytes:
+        if b"os" in raw_bytes or b"system" in raw_bytes or b"eval" in raw_bytes or b"pickle" in raw_bytes:
             exploit_detected = True
         if exploit_detected:
             result_text += " | Command executed: SECRET_FLAG_DATA_123"
