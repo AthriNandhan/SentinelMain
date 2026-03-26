@@ -5,6 +5,7 @@ import uuid
 from app.models.state import RemediationState
 from app.graph.workflow import app as workflow_app
 from app.services.logger import get_logger
+from app.core.vulnerability_config import VULNERABILITIES
 
 router = APIRouter()
 
@@ -17,6 +18,9 @@ class RemediationRequest(BaseModel):
     vulnerability_type: str
 
 def run_workflow(workflow_id: str, initial_state: RemediationState):
+    # ensure the state knows its own workflow ID, agents can reference it
+    initial_state.workflow_id = workflow_id
+
     logger = get_logger(workflow_id)
     logger.log_event("Orchestrator", "Workflow Started", initial_state.dict())
     
@@ -28,10 +32,20 @@ def run_workflow(workflow_id: str, initial_state: RemediationState):
         # Note: LangGraph might return a dict or object depending on config.
         # Assuming dict for now as that's typical with StateGraph
         final_state = RemediationState(**final_state_dict)
+        # Preserve workflow_id if not returned by graph
+        final_state.workflow_id = workflow_id
         workflow_store[workflow_id] = final_state
         logger.log_event("Orchestrator", "Workflow Completed", final_state.dict())
     except Exception as e:
         logger.log_event("Orchestrator", "Workflow Failed", {"error": str(e)})
+        # also mirror to stdout for visibility
+        try:
+            logger.log_and_print("Orchestrator", f"Workflow failed: {e}")
+        except Exception:
+            # if logger itself fails, fall back to print
+            print(f"Workflow failed: {e}")
+        import traceback
+        traceback.print_exc()
         # Store state with error info if possible, or just log
         pass
 
@@ -45,6 +59,8 @@ async def start_remediation(request: RemediationRequest, background_tasks: Backg
         iteration_count=0
     )
     
+    # tag the state so downstream agents can log via workflow_id
+    initial_state.workflow_id = workflow_id
     workflow_store[workflow_id] = initial_state
     
     background_tasks.add_task(run_workflow, workflow_id, initial_state)
@@ -83,3 +99,21 @@ async def apply_patch(workflow_id: str):
         return {"status": "success", "message": "Patch applied successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/vulnerabilities")
+async def get_vulnerabilities():
+    """Get list of available vulnerability types."""
+    vulnerabilities = []
+    for code, config in VULNERABILITIES.items():
+        vulnerabilities.append({
+            "code": code,
+            "name": config["display_name"],
+            "description": config["description"],
+            "payload_count": len(config["payloads"]),
+            "example_payloads": config["payloads"][:2]
+        })
+    
+    return {
+        "total": len(vulnerabilities),
+        "vulnerabilities": vulnerabilities
+    }

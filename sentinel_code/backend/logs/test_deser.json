@@ -1,0 +1,143 @@
+{
+    "workflow_id": "test_deser",
+    "events": [
+        {
+            "timestamp": "2026-03-07T04:37:31.488713",
+            "agent": "Red Agent",
+            "action": "--- Red Agent: Attacking ---",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:31.506285",
+            "agent": "Red Agent",
+            "action": "Executing payloads (DESERIALIZATION) against C:\\Projects\\Sentinel\\sentinel_code\\backend\\..\\..\\vulnerabilities\\5_insecure_deserialization.py via TestHarness...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:35.102301",
+            "agent": "Red Agent",
+            "action": "Trying payload: gASVEgAAAAAAAACMCGJ1aWx0aW5zlIwEZXZhbJSTlIwKcHJpbnQoMSkyXZSFlFKULg==",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:37.149010",
+            "agent": "Red Agent",
+            "action": "Exploit VERIFIED! Flag leaked: {'data': \"pickle error: unmatched ']' (<string>, line 1) | Command executed: SECRET_FLAG_DATA_123\", 'status': 'success'}",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.672827",
+            "agent": "Red Agent",
+            "action": "PoC written to C:\\Projects\\Sentinel\\sentinel_code\\backend\\..\\..\\vulnerabilities\\poc_exploit.py",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.695604",
+            "agent": "Blue Agent",
+            "action": "--- Blue Agent: Patching ---",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.715458",
+            "agent": "Blue Agent",
+            "action": "Iter 0: Simulating a flawed patch generation...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.737739",
+            "agent": "Green Agent",
+            "action": "--- Green Agent: Verifying ---",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.756936",
+            "agent": "Green Agent",
+            "action": "Running AST Analysis...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.809289",
+            "agent": "Green Agent",
+            "action": "AST Analysis PASSED: No unsafe query construction detected.",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:38.831152",
+            "agent": "Green Agent",
+            "action": "\nExecuting Test Harness on patched code...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:48.525566",
+            "agent": "Green Agent",
+            "action": "Test Results:\nRegression Test: PASS (Normal input returned data)\nSecurity Test: FAIL (payload gASVEgAAAAAAAACMCGJ1aWx0aW5zlIwEZXZhbJSTlIwKcHJpbnQoMSkyXZSFlFKULg== succeeded with data {'data': \"pickle error: unmatched ']' (<string>, line 1) | Command executed: SECRET_FLAG_DATA_123\", 'status': 'success'})",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:48.552816",
+            "agent": "Green Agent",
+            "action": "Verification Result: FAIL",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:48.576129",
+            "agent": "Green Agent",
+            "action": "Reasoning: Automated Tests FAILED.\nRegression Test: PASS (Normal input returned data)\nSecurity Test: FAIL (payload gASVEgAAAAAAAACMCGJ1aWx0aW5zlIwEZXZhbJSTlIwKcHJpbnQoMSkyXZSFlFKULg== succeeded with data {'data': \"pickle error: unmatched ']' (<string>, line 1) | Command executed: SECRET_FLAG_DATA_123\", 'status': 'success'})\nAST Analysis PASSED: No unsafe query construction detected.\nLLM Review: LLM review skipped for speed - AST, regression, and security tests are sufficient",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:48.598923",
+            "agent": "Blue Agent",
+            "action": "--- Blue Agent: Patching ---",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:48.625467",
+            "agent": "Blue Agent",
+            "action": "No template found for DESERIALIZATION, using LLM...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:50.947713",
+            "agent": "Green Agent",
+            "action": "--- Green Agent: Verifying ---",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:50.949302",
+            "agent": "Green Agent",
+            "action": "Running AST Analysis...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:50.972948",
+            "agent": "Green Agent",
+            "action": "AST Analysis PASSED: No unsafe query construction detected.",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:37:50.996497",
+            "agent": "Green Agent",
+            "action": "\nExecuting Test Harness on patched code...",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:38:00.646747",
+            "agent": "Green Agent",
+            "action": "Test Results:\nRegression Test: PASS (Normal input returned data)\nSecurity Test: PASS (no payload succeeded)",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:38:00.647892",
+            "agent": "Green Agent",
+            "action": "Verification Result: PASS",
+            "details": {}
+        },
+        {
+            "timestamp": "2026-03-07T04:38:00.672274",
+            "agent": "Green Agent",
+            "action": "Reasoning: Automated Tests PASSED.\nRegression Test: PASS (Normal input returned data)\nSecurity Test: PASS (no payload succeeded)\nAST Analysis PASSED: No unsafe query construction detected.\nLLM Review: LLM review skipped for speed - AST, regression, and security tests are sufficient",
+            "details": {}
+        }
+    ]
+}

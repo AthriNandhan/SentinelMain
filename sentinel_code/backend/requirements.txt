@@ -9,3 +9,6 @@ requests>=2.31.0
 python-dotenv>=1.0.0
 google-generativeai>=0.3.0
 groq>=0.4.0
+tree-sitter>=0.21.0
+tree-sitter-python>=0.21.0
+flask>=3.0.0

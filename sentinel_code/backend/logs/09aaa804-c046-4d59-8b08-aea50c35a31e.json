@@ -1,0 +1,30 @@
+{
+    "workflow_id": "09aaa804-c046-4d59-8b08-aea50c35a31e",
+    "events": [
+        {
+            "timestamp": "2026-03-06T22:41:25.406935",
+            "agent": "Orchestrator",
+            "action": "Workflow Started",
+            "details": {
+                "code_path": "../../vulnerabilities/5_insecure_deserialization.py",
+                "vulnerability_type": "DESERIALIZATION",
+                "exploit_success": false,
+                "exploit_payloads": [],
+                "patch_diff": null,
+                "patch_explanation": null,
+                "verification_status": "PENDING",
+                "verification_reasoning": null,
+                "iteration_count": 0,
+                "max_iterations": 3
+            }
+        },
+        {
+            "timestamp": "2026-03-06T22:41:47.628665",
+            "agent": "Orchestrator",
+            "action": "Workflow Failed",
+            "details": {
+                "error": "Flask server failed to start."
+            }
+        }
+    ]
+}

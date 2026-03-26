@@ -1,0 +1,113 @@
+C:\Projects\Sentinel\sentinel_code\backend\app\services\llm.py:1: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+
+======================================================================
+SENTINEL END-TO-END PIPELINE TEST - ALL VULNERABILITIES
+======================================================================
+
+--- using file: ../sandbox/vulnerable_sql.py
+--- Red Agent: Attacking ---
+Executing payloads (SQL) against ../sandbox/vulnerable_sql.py via TestHarness...
+Starting Flask server...
+Flask server is up and responding!
+Trying payload: ' OR '1'='1
+Failed. Output: [1, 'alice', 'password123', 1, 'Public Profile Data'] | Error: None
+Trying payload: admin' --
+Exploit VERIFIED! Flag leaked: [2, 'admin', 'admin123', 1, 'SECRET_FLAG_DATA_123']
+PoC written to ../sandbox\poc_exploit.py
+--- Blue Agent: Patching ---
+Iter 0: Simulating a flawed patch generation...
+--- Green Agent: Verifying ---
+Running AST Analysis...
+AST Analysis FAILED:
+Unsafe f-string query construction: f"SELECT * FROM {self.table} WHERE {where_clause}"
+
+Executing Test Harness on patched code...
+Starting Flask server...
+ERROR: Flask process exited unexpectedly!
+Server output:
+Traceback (most recent call last):
+  File "C:\Projects\Sentinel\sentinel_code\sandbox\app.py", line 4, in <module>
+    import vulnerable_code
+  File "C:\Projects\Sentinel\sentinel_code\sandbox\vulnerable_code.py", line 6
+    def __init__(self, table):
+    ^^^
+IndentationError: expected an indented block after class definition on line 4
+
+Traceback (most recent call last):
+  File "C:\Projects\Sentinel\sentinel_code\backend\test_pipeline.py", line 94, in test_all_pipelines
+    final_state = workflow_app.invoke(initial_state)
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\main.py", line 3094, in invoke
+    for chunk in self.stream(
+                 ~~~~~~~~~~~^
+        input,
+        ^^^^^^
+    ...<10 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    ):
+    ^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\main.py", line 2669, in stream
+    for _ in runner.tick(
+             ~~~~~~~~~~~^
+        [t for t in loop.tasks.values() if not t.writes],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        schedule_task=loop.accept_push,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ):
+    ^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\_runner.py", line 167, in tick
+    run_with_retry(
+    ~~~~~~~~~~~~~~^
+        t,
+        ^^
+    ...<10 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\site-packages\langgraph\pregel\_retry.py", line 71, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+  File "C:\Projects\Sentinel\sentinel_code\backend\app\agents\green_agent.py", line 29, in green_agent
+    results = test_harness.verify_fix(state.patch_diff, security_payloads=security_payloads, vuln_type=state.vulnerability_type)
+  File "C:\Projects\Sentinel\sentinel_code\backend\app\core\test_harness.py", line 241, in verify_fix
+    self.start_server(code_content=code_content)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\Sentinel\sentinel_code\backend\app\core\test_harness.py", line 71, in start_server
+    raise RuntimeError(f"Flask server failed to start. Output: {stdout_output}")
+RuntimeError: Flask server failed to start. Output: Traceback (most recent call last):
+  File "C:\Projects\Sentinel\sentinel_code\sandbox\app.py", line 4, in <module>
+    import vulnerable_code
+  File "C:\Projects\Sentinel\sentinel_code\sandbox\vulnerable_code.py", line 6
+    def __init__(self, table):
+    ^^^
+IndentationError: expected an indented block after class definition on line 4
+
+During task with name 'green_agent' and id '388b4c47-b39f-e0fd-7f1a-20bfcff44be8'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Projects\Sentinel\sentinel_code\backend\test_pipeline.py", line 136, in <module>
+    test_all_pipelines()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Projects\Sentinel\sentinel_code\backend\test_pipeline.py", line 108, in test_all_pipelines
+    print(f"\n\u2717 ERROR testing {vuln_type}: {str(e)}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\athri\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2717' in position 2: character maps to <undefined>

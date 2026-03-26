@@ -1,0 +1,30 @@
+{
+    "workflow_id": "e6baf48d-85de-44c4-9cb6-1105dd72308c",
+    "events": [
+        {
+            "timestamp": "2026-03-06T22:39:03.190871",
+            "agent": "Orchestrator",
+            "action": "Workflow Started",
+            "details": {
+                "code_path": "../../vulnerabilities/5_insecure_deserialization.py",
+                "vulnerability_type": "DESERIALIZATION",
+                "exploit_success": false,
+                "exploit_payloads": [],
+                "patch_diff": null,
+                "patch_explanation": null,
+                "verification_status": "PENDING",
+                "verification_reasoning": null,
+                "iteration_count": 0,
+                "max_iterations": 3
+            }
+        },
+        {
+            "timestamp": "2026-03-06T22:39:04.749542",
+            "agent": "Orchestrator",
+            "action": "Workflow Failed",
+            "details": {
+                "error": "name 'requests' is not defined"
+            }
+        }
+    ]
+}

