@@ -15,7 +15,6 @@ workflow_store: Dict[str, RemediationState] = {}
 
 class RemediationRequest(BaseModel):
     code_path: str
-    vulnerability_type: str
 
 def run_workflow(workflow_id: str, initial_state: RemediationState):
     # ensure the state knows its own workflow ID, agents can reference it
@@ -53,9 +52,10 @@ def run_workflow(workflow_id: str, initial_state: RemediationState):
 async def start_remediation(request: RemediationRequest, background_tasks: BackgroundTasks):
     workflow_id = str(uuid.uuid4())
     
+    all_vulns = list(VULNERABILITIES.keys())
     initial_state = RemediationState(
         code_path=request.code_path,
-        vulnerability_type=request.vulnerability_type,
+        target_vulnerabilities=all_vulns,
         iteration_count=0
     )
     

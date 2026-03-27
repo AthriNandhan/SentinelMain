@@ -12,7 +12,7 @@ function App() {
     return (
         <QueryClientProvider client={queryClient}>
             <div className="min-h-screen text-slate-200 p-8 font-sans selection:bg-indigo-500/30">
-                <header className="max-w-4xl mx-auto mb-12 flex items-center justify-between border-b border-white/5 pb-6">
+                <header className="max-w-screen mx-auto mb-12 flex items-center justify-between border-b border-white/5 pb-6">
                     <div className="flex items-center gap-4">
                         <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.15)]">
                             <Shield className="text-indigo-400 w-8 h-8" />
@@ -33,7 +33,7 @@ function App() {
                     </div>
                 </header>
 
-                <main className="max-w-4xl mx-auto space-y-8 relative z-10">
+                <main className="max-w-screen mx-auto space-y-8 relative z-10">
                     {!workflowId ? (
                         <RemediationForm onStart={setWorkflowId} />
                     ) : (

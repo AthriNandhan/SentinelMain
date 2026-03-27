@@ -16,7 +16,15 @@ class WorkflowLogger:
     def _initialize_log(self):
         if not os.path.exists(self.log_file):
             with open(self.log_file, "w") as f:
-                json.dump({"workflow_id": self.workflow_id, "events": []}, f)
+                json.dump({"workflow_id": self.workflow_id, "events": [], "vulnerability_checklist": {}}, f)
+
+    def update_checklist(self, checklist: Dict[str, bool]):
+        with open(self.log_file, "r+") as f:
+            data = json.load(f)
+            data["vulnerability_checklist"] = checklist
+            f.seek(0)
+            json.dump(data, f, indent=4)
+            f.truncate()
 
     def log_event(self, agent: str, action: str, details: Dict[str, Any]):
         timestamp = datetime.utcnow().isoformat()
@@ -37,11 +45,18 @@ class WorkflowLogger:
         """Convenience helper used by agents.
         Writes the message to stdout and records an event in the log file.
         """
+        def safe_print(*args):
+            text = " ".join(str(a) for a in args)
+            try:
+                print(text)
+            except UnicodeEncodeError:
+                print(text.encode('ascii', 'replace').decode('ascii'))
+                
         # print message in a human-readable format
         if details:
-            print(action, details)
+            safe_print(action, details)
         else:
-            print(action)
+            safe_print(action)
         # ensure details isn't None when logging
         self.log_event(agent, action, details or {})
 

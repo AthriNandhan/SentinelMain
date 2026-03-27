@@ -43,9 +43,12 @@ def green_agent(state: RemediationState) -> RemediationState:
     else:
         print(msg)
     
-    # Pass Red agent's successful payloads to ensure they are blocked now
-    security_payloads = state.exploit_payloads if state.exploit_payloads else None
-    results = test_harness.verify_fix(state.patch_diff, security_payloads=security_payloads, vuln_type=state.vulnerability_type)
+    # Ensure we test all discovered vulnerabilities
+    results = test_harness.verify_fix(
+        code_content=state.patch_diff,
+        vulnerability_checklist=state.vulnerability_checklist,
+        successful_payloads=state.successful_payloads
+    )
     
     execution_reasoning = "\n".join(results["details"])
     exp_msg = f"Test Results:\n{execution_reasoning}"

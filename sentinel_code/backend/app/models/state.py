@@ -1,20 +1,20 @@
-from typing import List, Optional
+from typing import List, Dict, Optional
 from pydantic import BaseModel, Field
 
 class RemediationState(BaseModel):
     """
-    Shared state for the remediation workflow.
+    Shared state for the batch remediation workflow.
     """
     code_path: str = Field(..., description="Path to the vulnerable code file.")
-    vulnerability_type: str = Field(..., description="Type of vulnerability (e.g., SQL Injection).")
+    target_vulnerabilities: List[str] = Field(default_factory=list, description="List of vulnerability types to check.")
     
     # Red Agent Outputs
-    exploit_success: bool = Field(False, description="Whether the exploit was successful.")
-    exploit_payloads: List[str] = Field(default_factory=list, description="List of successful exploit payloads.")
+    vulnerability_checklist: Dict[str, bool] = Field(default_factory=dict, description="Maps vulnerability type to exploit success (True = vulnerable).")
+    successful_payloads: Dict[str, List[str]] = Field(default_factory=dict, description="Maps vulnerability type to successful exploit payloads.")
     
     # Blue Agent Outputs
-    patch_diff: Optional[str] = Field(None, description="The generated patch in diff format.")
-    patch_explanation: Optional[str] = Field(None, description="Explanation of the applied fix.")
+    patch_diff: Optional[str] = Field(None, description="The generated consolidated patch in diff format.")
+    patch_explanation: Optional[str] = Field(None, description="Explanation of the applied consolidated fix.")
     
     # Green Agent Outputs
     verification_status: str = Field("PENDING", description="Verification status: PENDING, PASS, FAIL.")

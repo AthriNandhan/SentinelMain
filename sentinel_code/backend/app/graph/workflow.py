@@ -6,9 +6,9 @@ from app.agents.green_agent import green_agent
 
 def decide_next_node_after_red(state: RemediationState):
     """
-    Decide whether to proceed to Blue Agent or end workflow based on exploit success.
+    Decide whether to proceed to Blue Agent or end workflow based on exploit success checklist.
     """
-    if state.exploit_success:
+    if any(state.vulnerability_checklist.values()):
         return "blue_agent"
     return END
 
