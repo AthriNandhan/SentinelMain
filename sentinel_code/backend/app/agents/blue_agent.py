@@ -53,13 +53,16 @@ def blue_agent(state: RemediationState) -> RemediationState:
         {code_content}
         ```
         
-        Provide ONLY the complete fixed Python file - no markdown, no explanations. Do not include any text before or after the code block.
-        Follow secure coding practices to fix ALL listed vulnerabilities at once:
-        - Escape/sanitize all user input (HTML escaping for XSS)
-        - Use parameterized queries for database operations to prevent SQL Injection
-        - Validate file paths to prevent traversal
-        - Enforce input size limits for buffer overflows
-        - Use safe libraries and patterns
+        Provide ONLY the complete fixed Python file.
+        IMPORTANT: Do NOT truncate the code! Do NOT write "rest of the code here". You must return the ENTIRE file from the first import to the last function.
+        IMPORTANT: Your response must be a SINGLE continuous ```python block containing the full script. Do not split it across multiple blocks.
+
+        Follow extremely secure coding practices to fix ALL listed vulnerabilities at once:
+        - CRITICAL: Do NOT use ANY string formatting (f-strings, %, .format, or +) for SQL queries! You MUST rewrite the logic to use standard parameterized SQLite queries (e.g., `cursor.execute("SELECT * FROM table WHERE user=?", (user,))`). The AST analyzer will instantly reject any f-string SQL!
+        - Escape/sanitize all user input (HTML escaping for XSS).
+        - Validate file paths to prevent traversal securely (use `os.path.abspath` and `os.path.commonprefix`).
+        - Enforce input size limits for buffer overflows.
+        - NEVER use `pickle` for untrusted data. Use `json` instead.
         """
         
         fixed_code = llm_service.generate_text(prompt)

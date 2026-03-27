@@ -45,8 +45,8 @@ class TestHarness:
             [sys.executable, "app.py"],
             cwd=self.sandbox_dir,
             env=env,
-            stdout=None,
-            stderr=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True
         )
         
@@ -69,9 +69,15 @@ class TestHarness:
                 import urllib.error
                 data = json.dumps({"username": "alice", "request_id": "ping"}).encode('utf-8')
                 req = urllib.request.Request(self.server_url, data=data, headers={'Content-Type': 'application/json'})
-                with urllib.request.urlopen(req, timeout=2) as response:
+                try:
+                    with urllib.request.urlopen(req, timeout=2) as response:
+                        server_ready = True
+                        print("Flask server is up and responding!")
+                except urllib.error.HTTPError as e:
+                    # An HTTPError (like 4xx or 500) means the server IS running and responding,
+                    # even if the specific ping payload triggered an error.
                     server_ready = True
-                    print("Flask server is up and responding!")
+                    print(f"Flask server is up (responded with {e.code})!")
             except (urllib.error.URLError, OSError) as e:
                 retry_count += 1
                 print(f"Waiting for server... ({retry_count}/{max_retries})")
@@ -81,11 +87,13 @@ class TestHarness:
             if self.server_process:
                 self.server_process.terminate()
                 try:
-                    stdout_output, _ = self.server_process.communicate(timeout=2)
-                    print(f"Server output:\n{stdout_output}")
+                    stdout_output, stderr_output = self.server_process.communicate(timeout=2)
+                    error_details = stderr_output or stdout_output or "No output available"
+                    print(f"Server output:\n{error_details}")
                 except Exception as e:
+                    error_details = str(e)
                     print(f"Could not retrieve server output: {e}")
-            raise RuntimeError(f"Flask server did not start after {max_retries} attempts")
+            raise RuntimeError(f"Flask server failed to start. Traceback:\n{error_details}")
 
     def stop_server(self):
         """Stops the Flask app and restores original vulnerable code."""

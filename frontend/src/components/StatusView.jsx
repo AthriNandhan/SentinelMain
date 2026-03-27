@@ -65,7 +65,7 @@ const StatusView = ({ workflowId, isDevMode }) => {
     if (!isDevMode && error) return <div className="text-red-500">Connection Lost with Sentinel Operations.</div>;
 
     const { state, logs } = activeData || {};
-    
+
     if (!state) return <div className="text-center text-yellow-500">Initializing state...</div>;
 
 
@@ -131,11 +131,11 @@ const StatusView = ({ workflowId, isDevMode }) => {
 
                     <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
                         <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'bg-emerald-500/10' :
-                                remediationStatus === 'VULNERABLE' ? 'bg-red-500/10' : 'bg-amber-500/10'
+                            remediationStatus === 'VULNERABLE' ? 'bg-red-500/10' : 'bg-amber-500/10'
                             }`}></div>
                         <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Network Status</h3>
                         <p className={`text-2xl font-mono font-bold tracking-tight ${remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'text-emerald-400' :
-                                remediationStatus === 'VULNERABLE' ? 'text-red-400' : 'text-amber-400'
+                            remediationStatus === 'VULNERABLE' ? 'text-red-400' : 'text-amber-400'
                             }`}>
                             {remediationStatus}
                         </p>
@@ -143,14 +143,19 @@ const StatusView = ({ workflowId, isDevMode }) => {
 
                     <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex-grow">
                         <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${state.verification_status === 'PASS' ? 'bg-emerald-500/10' :
-                                state.verification_status === 'FAIL' ? 'bg-red-500/10' : 'bg-indigo-500/10'
+                            state.verification_status === 'FAIL' ? 'bg-red-500/10' : 'bg-indigo-500/10'
                             }`}></div>
                         <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Verification</h3>
                         <p className={`text-2xl font-mono font-bold tracking-tight ${state.verification_status === 'PASS' ? 'text-emerald-400' :
-                                state.verification_status === 'FAIL' ? 'text-red-400' : 'text-indigo-400'
+                            state.verification_status === 'FAIL' ? 'text-red-400' : 'text-indigo-400'
                             }`}>
                             {state.verification_status}
                         </p>
+                        {/* 
+                        <div className="pt-3 border-t border-white/10 font-mono text-[13px] whitespace-pre-wrap leading-relaxed text-slate-400">
+                            {state.verification_reasoning || <span className="italic">Waiting for verification analysis...</span>}
+                        </div>
+                        */}
                     </div>
                 </div>
                 {/* Left Column: Verification Analysis & Checklist */}
@@ -162,17 +167,17 @@ const StatusView = ({ workflowId, isDevMode }) => {
                         <h3 className="text-slate-200 font-semibold tracking-wide">Vulnerability Checklist</h3>
                     </div>
                     <div className="bg-[#0B0F19] p-4 rounded-xl text-slate-300 text-sm overflow-y-auto max-h-[400px] flex-grow border border-white/5 shadow-inner">
-                        <div className="space-y-3 mb-4">
+                        <div className="grid grid-cols-2 gap-3 mb-4">
                             {(state.target_vulnerabilities || []).map(vuln => {
                                 const isVuln = checklist[vuln];
                                 const isChecked = checklist.hasOwnProperty(vuln);
                                 return (
-                                    <div key={vuln} className="flex flex-col gap-1 p-2 rounded bg-white/[0.02] border border-white/5">
+                                    <div key={vuln} className="flex flex-col gap-1 p-2.5 rounded-lg bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] transition-colors h-full justify-center">
                                         <div className="flex justify-between items-center">
-                                            <span className="font-mono text-xs font-semibold">{vuln}</span>
+                                            <span className="font-mono text-sm font-semibold tracking-wide text-slate-200">{vuln}</span>
                                             {isChecked ? (
-                                                isVuln ? <span className="text-red-400 text-xs font-bold">VULNERABLE</span>
-                                                    : <span className="text-emerald-400 text-xs font-bold">SECURE</span>
+                                                isVuln ? <span className="text-red-400 text-[10px] font-black tracking-widest px-2 py-0.5 bg-red-400/10 rounded-full border border-red-400/20">VULNERABLE</span>
+                                                    : <span className="text-emerald-400 text-[10px] font-black tracking-widest px-2 py-0.5 bg-emerald-400/10 rounded-full border border-emerald-400/20">SECURE</span>
                                             ) : (
                                                 <span className="text-slate-500 text-xs italic animate-pulse">Scanning...</span>
                                             )}
@@ -181,9 +186,7 @@ const StatusView = ({ workflowId, isDevMode }) => {
                                 );
                             })}
                         </div>
-                        <div className="pt-3 border-t border-white/10 font-mono text-[13px] whitespace-pre-wrap leading-relaxed text-slate-400">
-                            {state.verification_reasoning || <span className="italic">Waiting for verification analysis...</span>}
-                        </div>
+
                     </div>
                 </div>
 
@@ -199,15 +202,15 @@ const StatusView = ({ workflowId, isDevMode }) => {
                                 <div className="flex items-center gap-3 mb-1.5">
                                     <span className="text-slate-500 text-xs">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
                                     <span className={`font-bold px-2 py-0.5 rounded text-xs ${log.agent === 'Orchestrator' ? 'bg-indigo-500/20 text-indigo-300' :
-                                            log.agent === 'Red Agent' ? 'bg-red-500/20 text-red-300' :
-                                                log.agent === 'Blue Agent' ? 'bg-cyan-500/20 text-cyan-300' :
-                                                    'bg-emerald-500/20 text-emerald-300'
+                                        log.agent === 'Red Agent' ? 'bg-red-500/20 text-red-300' :
+                                            log.agent === 'Blue Agent' ? 'bg-cyan-500/20 text-cyan-300' :
+                                                'bg-emerald-500/20 text-emerald-300'
                                         }`}>{log.agent}</span>
                                     <span className="text-slate-300">{log.action}</span>
                                 </div>
                                 {log.details && (
-                                    <div className="mt-2 pl-3 border-l-2 border-slate-800">
-                                        <pre className="text-slate-400 text-xs overflow-x-auto whitespace-pre-wrap">
+                                    <div className="mt-2 pl-3 border-l-2 border-slate-800 overflow-hidden w-full max-w-full">
+                                        <pre className="text-slate-400 text-[11px] whitespace-pre-wrap break-words overflow-x-hidden leading-relaxed max-w-full">
                                             {JSON.stringify(log.details, null, 2)}
                                         </pre>
                                     </div>
