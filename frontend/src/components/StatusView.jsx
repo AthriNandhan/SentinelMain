@@ -3,16 +3,17 @@ import { useQuery } from '@tanstack/react-query';
 import { getStatus } from '../services/api';
 import { Shield, ShieldAlert, ShieldCheck, Activity, Terminal } from 'lucide-react';
 
-const StatusView = ({ workflowId }) => {
+const StatusView = ({ workflowId, isDevMode }) => {
     const { data, error, isLoading } = useQuery({
         queryKey: ['workflow', workflowId],
         queryFn: () => getStatus(workflowId),
         // keep polling only while workflow is in progress
         refetchInterval: (query) => {
-            const currentData = query.state.data;
+            if (isDevMode) return false;
+            const currentData = query.state?.data;
             return (currentData && currentData.state && currentData.state.verification_status === 'PENDING') ? 1000 : false;
         },
-        enabled: !!workflowId,
+        enabled: !!workflowId && !isDevMode,
     });
     const [applying, setApplying] = React.useState(false);
     const [applyMsg, setApplyMsg] = React.useState('');
@@ -22,11 +23,49 @@ const StatusView = ({ workflowId }) => {
         logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [data?.logs?.events]);
 
-    if (isLoading || !data) return <div className="text-center text-green-500 animate-pulse">Establishing uplink...</div>;
-    if (error) return <div className="text-red-500">Connection Lost with Sentinel Operations.</div>;
+    const mockData = {
+        state: {
+            iteration_count: 2,
+            max_iterations: 5,
+            verification_status: 'PASS',
+            verification_reasoning: 'AST Analysis FAILED:\nUnsafe f-string query construction: f"SELECT * FROM {self.table} WHERE {where_clause}"\n\nAutomated Tests PASSED.\nRegression Test (DESERIALIZATION): PASS (Normal input returned data)\nSecurity Test (DESERIALIZATION): PASS (payload failed, effectively patched)',
+            target_vulnerabilities: ['SQL', 'XSS', 'PATH_TRAVERSAL', 'DESERIALIZATION', 'COMMAND_INJECTION'],
+            patch_diff: '@@ -14,7 +14,7 @@\n def load_user_session(data):\n-    decoded_data = base64.b64decode(session_cookie)\n-    user_obj = pickle.loads(decoded_data)\n+    # VULNERABILITY REMOVED\n+    user_obj = safe_json_load(session_cookie)\n     return getattr(user_obj, "username", "Unknown")',
+            vulnerability_checklist: {
+                'SQL': false,
+                'XSS': true,
+                'PATH_TRAVERSAL': false,
+                'DESERIALIZATION': true,
+                'COMMAND_INJECTION': false
+            }
+        },
+        logs: {
+            events: [
+                { timestamp: new Date(Date.now() - 50000).toISOString(), agent: 'Orchestrator', action: 'Initialized Batch Remediation Sequence' },
+                { timestamp: new Date(Date.now() - 40000).toISOString(), agent: 'Red Agent', action: 'Tested SQL - Secure' },
+                { timestamp: new Date(Date.now() - 30000).toISOString(), agent: 'Red Agent', action: 'Tested XSS - VULNERABLE!' },
+                { timestamp: new Date(Date.now() - 25000).toISOString(), agent: 'Red Agent', action: 'Tested PATH_TRAVERSAL - Secure' },
+                { timestamp: new Date(Date.now() - 20000).toISOString(), agent: 'Red Agent', action: 'Tested DESERIALIZATION - VULNERABLE!' },
+                { timestamp: new Date(Date.now() - 15000).toISOString(), agent: 'Blue Agent', action: 'Synthesized consolidated patch for XSS, DESERIALIZATION' },
+                { timestamp: new Date(Date.now() - 5000).toISOString(), agent: 'Green Agent', action: 'All verification checks passed' }
+            ],
+            vulnerability_checklist: {
+                'SQL': false,
+                'XSS': true,
+                'PATH_TRAVERSAL': false,
+                'DESERIALIZATION': true,
+                'COMMAND_INJECTION': false
+            }
+        }
+    };
 
-    const { state, logs } = data;
+    const activeData = isDevMode ? mockData : data;
 
+    if (!isDevMode && isLoading) return <div className="text-center text-green-500 animate-pulse">Establishing uplink...</div>;
+    if (!isDevMode && error) return <div className="text-red-500">Connection Lost with Sentinel Operations.</div>;
+
+    const { state, logs } = activeData || {};
+    
     if (!state) return <div className="text-center text-yellow-500">Initializing state...</div>;
 
 

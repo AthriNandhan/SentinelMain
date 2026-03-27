@@ -8,6 +8,7 @@ const queryClient = new QueryClient();
 
 function App() {
     const [workflowId, setWorkflowId] = useState(null);
+    const [isDevMode, setIsDevMode] = useState(false);
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -35,17 +36,29 @@ function App() {
 
                 <main className="max-w-screen mx-auto space-y-8 relative z-10">
                     {!workflowId ? (
-                        <RemediationForm onStart={setWorkflowId} />
+                        <>
+                            <RemediationForm onStart={setWorkflowId} />
+                            <div className="mt-8 flex justify-center">
+                                <button
+                                    onClick={() => { setWorkflowId('dev_preview'); setIsDevMode(true); }}
+                                    className="text-xs text-slate-500 hover:text-indigo-400 font-mono transition-colors opacity-70 hover:opacity-100 flex items-center gap-1.5 border border-transparent hover:border-indigo-500/30 px-3 py-1.5 rounded-full"
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                                    [DEV] Preview Dashboard Layout
+                                </button>
+                            </div>
+                        </>
                     ) : (
                         <div className="space-y-6">
                             <button
-                                onClick={() => setWorkflowId(null)}
+                                onClick={() => { setWorkflowId(null); setIsDevMode(false); }}
                                 className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 font-medium transition-colors hover:bg-white/5 px-3 py-1.5 rounded-lg -ml-3"
                             >
                                 ← Return to Mission Control
                             </button>
-                            <StatusView workflowId={workflowId} />
+                            <StatusView workflowId={workflowId} isDevMode={isDevMode} />
                         </div>
+
                     )}
                 </main>
             </div>
