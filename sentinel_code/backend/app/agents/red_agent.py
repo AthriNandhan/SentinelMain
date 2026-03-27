@@ -32,33 +32,32 @@ def red_agent(state: RemediationState) -> RemediationState:
 
     any_success = False
 
-    for vuln_type in state.target_vulnerabilities:
-        PAYLOADS = get_payloads_for_type(vuln_type)
-        if not PAYLOADS:
-            continue
-
-        msg = f"Executing payloads ({vuln_type}) against {state.code_path} via TestHarness..."
+    test_harness.stop_server()  # Ensure clean state
+    try:
+        test_harness.start_server(code_path=state.code_path)
+    except Exception as e:
+        msg = f"FATAL ERROR: Target file prevented server from starting. Check syntax or imports: {e}"
         if logger:
             logger.log_and_print("Red Agent", msg)
         else:
             print(msg)
-            
-        test_harness.stop_server()  # Ensure clean state
-        try:
-            test_harness.start_server(code_path=state.code_path)
-        except Exception as e:
-            msg = f"FATAL ERROR: Target file prevented server from starting. Check syntax or imports: {e}"
+        return state
+
+    try:
+        for vuln_type in state.target_vulnerabilities:
+            PAYLOADS = get_payloads_for_type(vuln_type)
+            if not PAYLOADS:
+                continue
+
+            msg = f"Executing payloads ({vuln_type}) against {state.code_path} via TestHarness..."
             if logger:
                 logger.log_and_print("Red Agent", msg)
             else:
                 print(msg)
-            # Break the loop since the server fundamentally won't start
-            break
-        
-        success = False
-        successful_payload = None
-        
-        try:
+                
+            success = False
+            successful_payload = None
+            
             for payload in PAYLOADS:
                 attempt_msg = f"Trying {vuln_type} payload: {payload}"
                 if logger:
@@ -82,41 +81,38 @@ def red_agent(state: RemediationState) -> RemediationState:
                         logger.log_and_print("Red Agent", failure_msg)
                     else:
                         print(failure_msg)
-                    
-        finally:
-            test_harness.stop_server()
 
-        state.vulnerability_checklist[vuln_type] = success
-        if logger:
-            logger.update_checklist(state.vulnerability_checklist)
-            
-        if success:
-            any_success = True
-            state.successful_payloads[vuln_type] = [successful_payload]
-            
-            # PoC Generation
-            def make_payload_snippet(vt, p):
-                if isinstance(p, dict): return p
-                if vt == "SQL": return {"username": p, "request_id": "poc_1"}
-                elif vt == "XSS": return {"comment": p}
-                elif vt == "PATH_TRAVERSAL": return {"filename": p}
-                elif vt == "BUFFER_OVERFLOW": return {"input": p}
-                elif vt == "INFO_EXPOSURE": return {"key": "test", "data": p}
-                elif vt == "XXE": return {"xml": p}
-                elif vt == "SSRF": return {"url": p}
-                elif vt == "INSECURE_RANDOMNESS": return {"user_id": 1, "data": p}
-                elif vt == "RACE_CONDITION": return {"data": p}
-                elif vt == "BOLA":
-                    try:
-                        import json as _json
-                        return _json.loads(p)
-                    except Exception: return {"data": p}
-                elif vt == "HARDCODED_SECRETS": return {"data": p}
-                elif vt == "DESERIALIZATION": return {"session_data": p}
-                else: return {"data": p}
+            state.vulnerability_checklist[vuln_type] = success
+            if logger:
+                logger.update_checklist(state.vulnerability_checklist)
+                
+            if success:
+                any_success = True
+                state.successful_payloads[vuln_type] = [successful_payload]
+                
+                # PoC Generation
+                def make_payload_snippet(vt, p):
+                    if isinstance(p, dict): return p
+                    if vt == "SQL": return {"username": p, "request_id": "poc_1"}
+                    elif vt == "XSS": return {"comment": p}
+                    elif vt == "PATH_TRAVERSAL": return {"filename": p}
+                    elif vt == "BUFFER_OVERFLOW": return {"input": p}
+                    elif vt == "INFO_EXPOSURE": return {"key": "test", "data": p}
+                    elif vt == "XXE": return {"xml": p}
+                    elif vt == "SSRF": return {"url": p}
+                    elif vt == "INSECURE_RANDOMNESS": return {"user_id": 1, "data": p}
+                    elif vt == "RACE_CONDITION": return {"data": p}
+                    elif vt == "BOLA":
+                        try:
+                            import json as _json
+                            return _json.loads(p)
+                        except Exception: return {"data": p}
+                    elif vt == "HARDCODED_SECRETS": return {"data": p}
+                    elif vt == "DESERIALIZATION": return {"session_data": p}
+                    else: return {"data": p}
 
-            poc_payload = make_payload_snippet(vuln_type, successful_payload)
-            poc_content = f"""import requests
+                poc_payload = make_payload_snippet(vuln_type, successful_payload)
+                poc_content = f"""import requests
 
 # Auto-generated PoC exploit by Red Agent - {vuln_type}
 url = "http://localhost:5000/analyze"
@@ -128,9 +124,11 @@ try:
 except Exception as e:
     print("Error:", e)
 """
-            poc_path = os.path.join(os.path.dirname(state.code_path), f"poc_exploit_{vuln_type}.py")
-            with open(poc_path, "w") as f:
-                f.write(poc_content)
+                poc_path = os.path.join(os.path.dirname(state.code_path), f"poc_exploit_{vuln_type}.py")
+                with open(poc_path, "w") as f:
+                    f.write(poc_content)
+    finally:
+        test_harness.stop_server()
 
     if not any_success:
         msg = "Red Agent: All payloads failed across all vulnerability types. No exploits found."

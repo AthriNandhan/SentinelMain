@@ -204,6 +204,16 @@ class TestHarness:
                     
                     return result
                     
+                except urllib.error.HTTPError as e:
+                    # Server is definitely running, but the payload caused an error (e.g. 500)
+                    # We should NOT retry this, as the payload just predictably failed/crashed the endpoint
+                    try:
+                        res_text = e.read().decode('utf-8')
+                        res_json = json.loads(res_text)
+                        result["error"] = res_json.get("error", f"HTTP {e.code}")
+                    except Exception:
+                        result["error"] = f"HTTP {e.code}"
+                    return result
                 except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
                     if attempt < max_attack_retries - 1:
                         print(f"Attack attempt {attempt + 1} failed, retrying... ({str(e)[:50]})")
