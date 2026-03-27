@@ -116,43 +116,43 @@ const StatusView = ({ workflowId, isDevMode }) => {
 
     return (
         <div className="space-y-6">
-            {/* Top Dashboard Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
-                    <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Iteration</h3>
-                    <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-mono text-white">{state.iteration_count}</p>
-                        <p className="text-slate-500 font-mono text-lg">/ {state.max_iterations}</p>
+            {/* 3-Column Layout: Metrics, Checklist, Live Logs */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[500px]">
+                {/* Column 1: Metrics */}
+                <div className="flex flex-col gap-6">
+                    <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                        <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Iteration</h3>
+                        <div className="flex items-baseline gap-2">
+                            <p className="text-3xl font-mono text-white">{state.iteration_count}</p>
+                            <p className="text-slate-500 font-mono text-lg">/ {state.max_iterations}</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
+                        <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'bg-emerald-500/10' :
+                                remediationStatus === 'VULNERABLE' ? 'bg-red-500/10' : 'bg-amber-500/10'
+                            }`}></div>
+                        <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Network Status</h3>
+                        <p className={`text-2xl font-mono font-bold tracking-tight ${remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'text-emerald-400' :
+                                remediationStatus === 'VULNERABLE' ? 'text-red-400' : 'text-amber-400'
+                            }`}>
+                            {remediationStatus}
+                        </p>
+                    </div>
+
+                    <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden flex-grow">
+                        <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${state.verification_status === 'PASS' ? 'bg-emerald-500/10' :
+                                state.verification_status === 'FAIL' ? 'bg-red-500/10' : 'bg-indigo-500/10'
+                            }`}></div>
+                        <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Verification</h3>
+                        <p className={`text-2xl font-mono font-bold tracking-tight ${state.verification_status === 'PASS' ? 'text-emerald-400' :
+                                state.verification_status === 'FAIL' ? 'text-red-400' : 'text-indigo-400'
+                            }`}>
+                            {state.verification_status}
+                        </p>
                     </div>
                 </div>
-
-                <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
-                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'bg-emerald-500/10' :
-                            remediationStatus === 'VULNERABLE' ? 'bg-red-500/10' : 'bg-amber-500/10'
-                        }`}></div>
-                    <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Network Status</h3>
-                    <p className={`text-2xl font-mono font-bold tracking-tight ${remediationStatus === 'REMEDIATED' || remediationStatus === 'SECURE' ? 'text-emerald-400' :
-                            remediationStatus === 'VULNERABLE' ? 'text-red-400' : 'text-amber-400'
-                        }`}>
-                        {remediationStatus}
-                    </p>
-                </div>
-
-                <div className="bg-[#131A2A]/60 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
-                    <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none ${state.verification_status === 'PASS' ? 'bg-emerald-500/10' :
-                            state.verification_status === 'FAIL' ? 'bg-red-500/10' : 'bg-indigo-500/10'
-                        }`}></div>
-                    <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Verification</h3>
-                    <p className={`text-2xl font-mono font-bold tracking-tight ${state.verification_status === 'PASS' ? 'text-emerald-400' :
-                            state.verification_status === 'FAIL' ? 'text-red-400' : 'text-indigo-400'
-                        }`}>
-                        {state.verification_status}
-                    </p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[300px]">
                 {/* Left Column: Verification Analysis & Checklist */}
                 <div className="bg-[#131A2A]/80 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-xl flex flex-col">
                     <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/5">
