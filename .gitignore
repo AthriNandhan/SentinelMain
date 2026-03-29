@@ -2,3 +2,5 @@
 # Python cache
 __pycache__/
 *.pyc
+C:\Projects\Sentinel\sentinel_code\backend\app\agents\__pycache__
+sentinel_code/backend/logs/

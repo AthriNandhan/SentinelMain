@@ -8,11 +8,10 @@ const api = axios.create({
     },
 });
 
-export const startRemediation = async (code_path, vulnerability_type) => {
+export const startRemediation = async (code_path) => {
     // Explicitly mapping to ensure keys match Backend Pydantic model
     const payload = {
-        code_path: code_path,
-        vulnerability_type: vulnerability_type
+        code_path: code_path
     };
     console.log("Sending Payload:", payload);
     const response = await api.post('/remediate', payload);

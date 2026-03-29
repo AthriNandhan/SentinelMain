@@ -45,8 +45,8 @@ class TestHarness:
             [sys.executable, "app.py"],
             cwd=self.sandbox_dir,
             env=env,
-            stdout=None,
-            stderr=None,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True
         )
         
@@ -69,9 +69,15 @@ class TestHarness:
                 import urllib.error
                 data = json.dumps({"username": "alice", "request_id": "ping"}).encode('utf-8')
                 req = urllib.request.Request(self.server_url, data=data, headers={'Content-Type': 'application/json'})
-                with urllib.request.urlopen(req, timeout=2) as response:
+                try:
+                    with urllib.request.urlopen(req, timeout=2) as response:
+                        server_ready = True
+                        print("Flask server is up and responding!")
+                except urllib.error.HTTPError as e:
+                    # An HTTPError (like 4xx or 500) means the server IS running and responding,
+                    # even if the specific ping payload triggered an error.
                     server_ready = True
-                    print("Flask server is up and responding!")
+                    print(f"Flask server is up (responded with {e.code})!")
             except (urllib.error.URLError, OSError) as e:
                 retry_count += 1
                 print(f"Waiting for server... ({retry_count}/{max_retries})")
@@ -81,11 +87,13 @@ class TestHarness:
             if self.server_process:
                 self.server_process.terminate()
                 try:
-                    stdout_output, _ = self.server_process.communicate(timeout=2)
-                    print(f"Server output:\n{stdout_output}")
+                    stdout_output, stderr_output = self.server_process.communicate(timeout=2)
+                    error_details = stderr_output or stdout_output or "No output available"
+                    print(f"Server output:\n{error_details}")
                 except Exception as e:
+                    error_details = str(e)
                     print(f"Could not retrieve server output: {e}")
-            raise RuntimeError(f"Flask server did not start after {max_retries} attempts")
+            raise RuntimeError(f"Flask server failed to start. Traceback:\n{error_details}")
 
     def stop_server(self):
         """Stops the Flask app and restores original vulnerable code."""
@@ -196,6 +204,16 @@ class TestHarness:
                     
                     return result
                     
+                except urllib.error.HTTPError as e:
+                    # Server is definitely running, but the payload caused an error (e.g. 500)
+                    # We should NOT retry this, as the payload just predictably failed/crashed the endpoint
+                    try:
+                        res_text = e.read().decode('utf-8')
+                        res_json = json.loads(res_text)
+                        result["error"] = res_json.get("error", f"HTTP {e.code}")
+                    except Exception:
+                        result["error"] = f"HTTP {e.code}"
+                    return result
                 except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
                     if attempt < max_attack_retries - 1:
                         print(f"Attack attempt {attempt + 1} failed, retrying... ({str(e)[:50]})")
@@ -211,15 +229,15 @@ class TestHarness:
                 
         return result
 
-    def verify_fix(self, code_content: str, security_payloads: list = None, vuln_type: str = "SQL") -> dict:
+    def verify_fix(self, code_content: str, vulnerability_checklist: dict, successful_payloads: dict) -> dict:
         """
-        Verifies the fix by running:
-        1. Regression test (valid user/normal input)
-        2. Security test (ensure Red Agent's payloads fail)
+        Verifies the consolidated fix by running:
+        1. Regression test for all vulnerabilities (valid user/normal input)
+        2. Security test (ensure Red Agent's payloads fail for all found vulnerabilities)
         """
         results = {
-            "regression_passed": False,
-            "security_passed": False,
+            "regression_passed": True, # Assume true until one fails
+            "security_passed": True,   # Assume true until one fails
             "details": []
         }
         
@@ -230,35 +248,48 @@ class TestHarness:
             "PATH_TRAVERSAL": "data.txt",
             "BUFFER_OVERFLOW": "safe"
         }
-        normal_payload = normal_inputs.get(vuln_type, "test")
         
         try:
             self.start_server(code_content=code_content)
+        except Exception as e:
+            results["details"].append(f"FATAL: Server failed to start with patched code: {e}")
+            results["regression_passed"] = False
+            results["security_passed"] = False
+            return results
+        
+        try:
             
-            # 1. Regression Test: Normal input
-            res_normal = self.run_attack(normal_payload, vuln_type=vuln_type)
-            # heuristic check for expected return
-            if res_normal.get("data"):
-                results["regression_passed"] = True
-                results["details"].append("Regression Test: PASS (Normal input returned data)")
-            else:
-                results["details"].append(f"Regression Test: FAIL (No normal data: {res_normal.get('data')} | Error: {res_normal.get('error')})")
+            # Identify which vulnerabilities we need to check (the ones that were found)
+            vulns_to_check = [vt for vt, success in vulnerability_checklist.items() if success]
+            if not vulns_to_check:
+                results["details"].append("No vulnerabilities were previously found to verify against.")
+                return results
 
-            # 2. Security Test: Re-run attacks
-            if not security_payloads:
-                security_payloads = ["' OR '1'='1"]
-            
-            # run each security payload
-            for payload in security_payloads:
-                res_attack = self.run_attack(payload, vuln_type=vuln_type)
-                if res_attack.get("success"):
-                    results["details"].append(f"Security Test: FAIL (payload {payload} succeeded with data {res_attack.get('data')})")
-                    results["security_passed"] = False
-                    break
-            else:
-                results["security_passed"] = True
-                results["details"].append("Security Test: PASS (no payload succeeded)")
+            # 1. Regression Test: Normal input for each
+            for vuln_type in vulns_to_check:
+                normal_payload = normal_inputs.get(vuln_type, "test")
+                res_normal = self.run_attack(normal_payload, vuln_type=vuln_type)
                 
+                if res_normal.get("data"):
+                    results["details"].append(f"Regression Test ({vuln_type}): PASS (Normal input returned data)")
+                else:
+                    results["details"].append(f"Regression Test ({vuln_type}): FAIL (No normal data | Error: {res_normal.get('error')})")
+                    results["regression_passed"] = False
+
+            # 2. Security Test: Re-run attacks for each
+            for vuln_type in vulns_to_check:
+                payloads = successful_payloads.get(vuln_type, [])
+                if not payloads:
+                    continue
+                    
+                for payload in payloads:
+                    res_attack = self.run_attack(payload, vuln_type=vuln_type)
+                    if res_attack.get("success"):
+                        results["details"].append(f"Security Test ({vuln_type}): FAIL (payload {payload} succeeded with data {res_attack.get('data')})")
+                        results["security_passed"] = False
+                    else:
+                        results["details"].append(f"Security Test ({vuln_type}): PASS (payload failed, effectively patched)")
+                        
         finally:
             self.stop_server()
                 

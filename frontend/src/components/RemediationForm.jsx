@@ -4,41 +4,15 @@ import { Play, Loader2 } from 'lucide-react';
 
 const RemediationForm = ({ onStart }) => {
     const [codePath, setCodePath] = useState('');
-    const [vulnType, setVulnType] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [vulnerabilities, setVulnerabilities] = useState([]);
-    const [loadingVulns, setLoadingVulns] = useState(true);
-
-    useEffect(() => {
-        // Fetch available vulnerabilities from backend
-        const fetchVulnerabilities = async () => {
-            try {
-                const response = await fetch('http://localhost:8000/api/vulnerabilities');
-                const data = await response.json();
-                setVulnerabilities(data.vulnerabilities || []);
-            } catch (err) {
-                console.error('Failed to fetch vulnerabilities:', err);
-                // Fallback to hardcoded options
-                setVulnerabilities([
-                    { code: 'SQL', name: 'SQL Injection' },
-                    { code: 'XSS', name: 'Cross-Site Scripting (XSS)' },
-                    { code: 'PATH_TRAVERSAL', name: 'Path Traversal' },
-                    { code: 'BUFFER_OVERFLOW', name: 'Buffer Overflow' }
-                ]);
-            } finally {
-                setLoadingVulns(false);
-            }
-        };
-        fetchVulnerabilities();
-    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
         try {
-            const data = await startRemediation(codePath, vulnType);
+            const data = await startRemediation(codePath);
             onStart(data.workflow_id);
         } catch (err) {
             const errorMessage = err.response?.data?.detail || 'Failed to start remediation. Check console for details.';
@@ -73,31 +47,6 @@ const RemediationForm = ({ onStart }) => {
                     />
                 </div>
                 
-                <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-slate-400">Vulnerability Type</label>
-                    <div className="relative">
-                        <select
-                            value={vulnType}
-                            onChange={(e) => setVulnType(e.target.value)}
-                            className="block w-full appearance-none bg-[#0B0F19] border border-white/10 rounded-xl shadow-inner py-3 px-4 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            required
-                            disabled={loadingVulns}
-                        >
-                            <option value="" disabled className="text-slate-500">
-                                {loadingVulns ? 'Initializing scanners...' : 'Select Target Vulnerability'}
-                            </option>
-                            {vulnerabilities.map((vuln) => (
-                                <option key={vuln.code} value={vuln.code} className="bg-[#131A2A]">
-                                    {vuln.name}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                </div>
-                
                 {error && (
                     <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-start gap-2">
                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -107,7 +56,7 @@ const RemediationForm = ({ onStart }) => {
                 
                 <button
                     type="submit"
-                    disabled={loading || loadingVulns}
+                    disabled={loading}
                     className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#131A2A] focus:ring-indigo-500 transition-all duration-200 shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none mt-4"
                 >
                     {loading ? (
