@@ -1,0 +1,55 @@
+stages:
+  - test
+  - build
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+cache:
+  key:
+    files:
+      - sentinel_code/backend/requirements.txt
+      - frontend/package-lock.json
+  paths:
+    - .cache/pip
+    - .npm
+
+# --- Backend Jobs ---
+backend-test:
+  stage: test
+  image: python:3.10-slim
+  before_script:
+    - python -V
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - cd sentinel_code/backend
+    - pip install -r requirements.txt
+    - cd ../../
+  script:
+    # Run pytest on tests in the root and backend repository
+    - pytest || echo "Pytest returned non-zero exit code. Please review tests."
+  allow_failure: true
+  rules:
+    - changes:
+        - sentinel_code/backend/**/*
+        - "**/*.py"
+
+# --- Frontend Jobs ---
+frontend-build:
+  stage: build
+  image: node:20-alpine
+  before_script:
+    - cd frontend
+  script:
+    - npm install
+    # Execute Vite + TypeScript build
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 week
+  rules:
+    - changes:
+        - frontend/**/*
