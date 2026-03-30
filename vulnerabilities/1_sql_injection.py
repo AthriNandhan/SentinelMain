@@ -5,6 +5,7 @@ def login_user(request_payload):
     """
     VULNERABILITY: SQL Injection
     Demonstrates unsanitized user input being concatenated directly into a SQL query.
+    This is an example change
     """
     try:
         data = json.loads(request_payload)
